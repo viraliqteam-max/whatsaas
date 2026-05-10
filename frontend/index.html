@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Automation Panel</title>
+<style>
+/* ── Reset ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e;height:100vh;overflow:hidden}
+
+/* ── Login ── */
+#login-screen{display:flex;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#1a1a2e,#0f3460)}
+.login-card{background:#fff;border-radius:16px;padding:40px;width:380px;box-shadow:0 24px 64px rgba(0,0,0,.35)}
+.login-logo{font-size:42px;margin-bottom:12px}
+.login-card h1{font-size:22px;margin-bottom:5px}
+.login-card p{color:#888;font-size:13px;margin-bottom:28px}
+
+/* ── App shell ── */
+#app{display:none;flex-direction:column;height:100vh}
+.navbar{background:#1a1a2e;height:54px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.navbar h1{color:#fff;font-size:15px;font-weight:600;letter-spacing:.3px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user{color:#8892a4;font-size:12px}
+.body{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:195px;background:#16213e;overflow-y:auto;flex-shrink:0}
+.nav-item{padding:13px 18px;color:#8892a4;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:9px;transition:all .15s;user-select:none}
+.nav-item:hover{background:#0f3460;color:#fff}
+.nav-item.active{background:#25d366;color:#fff;font-weight:600}
+.nav-badge{background:#ff4757;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:auto}
+
+/* ── Content ── */
+.content{flex:1;padding:22px;overflow-y:auto}
+.page{display:none}.page.active{display:block}
+
+/* ── Section header ── */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sh h2{font-size:17px;font-weight:600}
+.sh-actions{display:flex;gap:7px}
+
+/* ── Card ── */
+.card{background:#fff;border-radius:8px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:14px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+
+/* ── Profile grid ── */
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.pc{background:#fff;border-radius:8px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid #ddd}
+.pc.active{border-left-color:#25d366}.pc.error{border-left-color:#ff4757}
+.pc.launching{border-left-color:#ffa502}.pc.inactive{border-left-color:#ccc}
+.pc-name{font-weight:600;font-size:14px;margin-bottom:3px}
+.pc-id{font-family:monospace;font-size:10px;color:#bbb;margin-bottom:10px;word-break:break-all}
+.pc-meta{display:flex;gap:7px;align-items:center;margin-bottom:11px}
+.pc-actions{display:flex;gap:5px;flex-wrap:wrap}
+
+/* ── Table ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:7px 11px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid #f0f2f5}
+td{padding:9px 11px;font-size:13px;border-bottom:1px solid #f8f9fa;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:7px 13px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;line-height:1}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#25d366;color:#fff}.btn-primary:hover:not(:disabled){background:#128c7e}
+.btn-danger{background:#ff4757;color:#fff}.btn-danger:hover:not(:disabled){background:#c0392b}
+.btn-secondary{background:#f0f2f5;color:#444}.btn-secondary:hover:not(:disabled){background:#e0e0e0}
+.btn-warning{background:#ffa502;color:#fff}.btn-warning:hover:not(:disabled){background:#e07800}
+.btn-info{background:#3498db;color:#fff}.btn-info:hover:not(:disabled){background:#2980b9}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+
+/* ── Badges ── */
+.badge{padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-active,.badge-logged_in,.badge-sent,.badge-completed{background:#d4f5e2;color:#0a7a4a}
+.badge-inactive,.badge-draft,.badge-pending{background:#f0f2f5;color:#666}
+.badge-dispatched,.badge-extension_received,.badge-sending,.badge-ack_received,.badge-retrying{background:#fff4e0;color:#b86e00}
+.badge-launching,.badge-qr_required,.badge-scheduled{background:#fff4e0;color:#b86e00}
+.badge-error,.badge-failed,.badge-logged_out{background:#ffe0e0;color:#c0392b}
+.badge-running{background:#e0f0ff;color:#1565c0}
+.badge-idle{background:#fff4e0;color:#b86e00}
+.badge-paused{background:#f3e0ff;color:#6a0080}
+
+/* ── Forms ── */
+.form-panel{display:none;background:#f8f9fa;border:1px solid #e5e5e5;border-radius:8px;padding:18px;margin-bottom:14px}
+.form-panel.open{display:block}
+.fg{margin-bottom:13px}
+label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;padding:8px 11px;border:1px solid #dde;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s;font-family:inherit;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:#25d366;box-shadow:0 0 0 3px rgba(37,211,102,.1)}
+textarea{resize:vertical;min-height:72px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fc{display:flex;align-items:center;gap:7px;margin-bottom:13px}
+.fc input[type=checkbox]{width:auto;accent-color:#25d366}
+.fc label{margin:0;text-transform:none;font-weight:500;font-size:13px;cursor:pointer}
+.form-footer{display:flex;gap:7px;margin-top:4px}
+
+/* ── Alert ── */
+.alert{padding:10px 13px;border-radius:6px;font-size:13px;margin-bottom:12px}
+.alert-error{background:#fff0f0;border:1px solid #ffc8c8;color:#c0392b}
+.alert-info{background:#f0f7ff;border:1px solid #c0d8f0;color:#1565c0}
+.alert-success{background:#f0fff5;border:1px solid #b0e0c0;color:#0a7a4a}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;justify-content:center;align-items:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:26px;width:500px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:18px}
+.modal-footer{display:flex;gap:7px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #f0f2f5}
+.modal-xl{width:min(900px,95vw)}
+
+/* ── Sub-tabs ── */
+.stabs{display:flex;border-bottom:2px solid #f0f2f5;margin-bottom:18px}
+.stab{padding:8px 18px;cursor:pointer;font-size:13px;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;user-select:none}
+.stab.active{color:#25d366;border-bottom-color:#25d366;font-weight:600}
+
+/* ── Toast ── */
+#toasts{position:fixed;top:64px;right:18px;z-index:1000;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{padding:10px 18px;border-radius:8px;font-size:13px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.18);animation:tslide .25s ease;pointer-events:auto}
+.toast.success{background:#25d366}.toast.error{background:#ff4757}.toast.info{background:#3498db}
+@keyframes tslide{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:none}}
+
+/* ── QR / Screenshot ── */
+.qr-wrap{text-align:center;padding:10px 0}
+.qr-wrap img{max-width:240px;border-radius:8px;border:2px solid #25d366}
+.qr-hint{font-size:12px;color:#888;margin-top:8px;line-height:1.5}
+.ss-wrap img{width:100%;border-radius:6px;border:1px solid #ddd}
+
+/* ── Empty / Spinner ── */
+.empty{text-align:center;padding:44px 20px;color:#bbb}
+.empty .ei{font-size:40px;margin-bottom:10px}
+.empty p{font-size:13px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid #ddd;border-top-color:#25d366;border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── Log rows ── */
+.log-sent td:first-child{border-left:3px solid #25d366}
+.log-failed td:first-child{border-left:3px solid #ff4757}
+.log-pending td:first-child{border-left:3px solid #ffa502}
+.log-dispatched td:first-child,.log-extension_received td:first-child,.log-sending td:first-child,.log-ack_received td:first-child,.log-retrying td:first-child{border-left:3px solid #ffa502}
+
+/* ── Campaign stats strip ── */
+.stats-strip{display:flex;gap:12px;font-size:12px;color:#777;flex-wrap:wrap;margin-top:10px}
+.stats-strip span{display:flex;align-items:center;gap:4px}
+
+/* ── Realtime / AI indicators ── */
+.ws-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;flex-shrink:0}
+.ws-connected{background:#25d366}.ws-disconnected{background:#ccc}.ws-online-text{color:#25d366;font-size:11px;font-weight:600}
+.ai-badge{background:linear-gradient(90deg,#667eea,#764ba2);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.3px}
+.auto-pill{background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid #a5d6a7}
+.realtime-bar{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;display:flex;align-items:center;gap:10px}
+.realtime-bar.warn{background:#fff8e1;border-color:#ffe082}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">💬</div>
+    <h1>WhatsApp Automation</h1>
+    <p>Sign in to manage your profiles and campaigns</p>
+    <div id="login-err" class="alert alert-error" style="display:none"></div>
+    <div class="fg">
+      <label>Username</label>
+      <input id="l-user" type="text" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="fg">
+      <label>Password</label>
+      <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%;padding:10px;font-size:14px" onclick="doLogin()">Sign In</button>
+    <p style="font-size:11px;color:#bbb;text-align:center;margin-top:12px">Connecting to <strong>http://localhost:8000</strong></p>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <nav class="navbar">
+    <h1>💬 WhatsApp Automation Panel</h1>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user"></span>
+      <button class="btn btn-secondary btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="body">
+    <nav class="sidebar">
+      <div class="nav-item active" id="nav-profiles" onclick="showPage('profiles')">📱 Profiles</div>
+      <div class="nav-item" id="nav-sessions" onclick="showPage('sessions')">🔐 Sessions</div>
+      <div class="nav-item" id="nav-contacts" onclick="showPage('contacts')">👥 Contacts</div>
+      <div class="nav-item" id="nav-messaging" onclick="showPage('messaging')">💬 Messaging</div>
+      <div class="nav-item" id="nav-inbox" onclick="showPage('inbox')">
+        📥 Inbox
+        <span class="nav-badge" id="inbox-badge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" id="nav-automation" onclick="showPage('automation')">🤖 Automation</div>
+      <div class="nav-item" id="nav-settings" onclick="showPage('settings')">⚙ Settings</div>
+    </nav>
+
+    <div class="content">
+      <div id="toasts"></div>
+
+      <!-- ======= PROFILES ======= -->
+      <div id="page-profiles" class="page active">
+        <div class="sh">
+          <h2>GoLogin Profiles</h2>
+          <div class="sh-actions">
+            <button class="btn btn-secondary btn-sm" onclick="loadProfiles()">↻ Refresh</button>
+            <button class="btn btn-primary" onclick="tog('fp-profile')">+ Add Profile</button>
+          </div>
+        </div>
+
+        <div id="fp-profile" class="form-panel">
+          <div class="fr">
+            <div class="fg"><label>Profile Name *</label><input id="pf-name" type="text" placeholder="Sales Account 1"></div>
+            <div class="fg"><label>OS Type</label>
+              <select id="pf-os"><option value="win">Windows</option><option value="mac">macOS</option><option value="lin">Linux</option></select>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Business Context <span style="color:#888;font-weight:400">(optional — used for AI auto-replies)</span></label>
+            <textarea id="pf-context" rows="3" placeholder="Describe your business so AI replies in context. Example: We sell CRM software at $49/month. Demo available Mon-Sat 10am-6pm IST. Support via WhatsApp."></textarea>
+          </div>
+          <div class="fc"><input type="checkbox" id="pf-sync" checked><label for="pf-sync">Also create on GoLogin (requires token in .env)</label></div>
+          <div class="form-footer">
+            <button class="btn btn-primary" onclick="createProfile()">Create Profile</button>
+            <button class="btn btn-secondary" onclick="tog('fp-profile')">Cancel</button>
+          </div>
+        </div>
+
+        <div id="profiles-grid" class="pg">
+          <div class="empty"><div class="spin"></div></div>
+        </div>
+      </div>
+
+      <!-- ======= SESSIONS ======= -->
+      <div id="page-sessions" class="page">
+        <div class="sh">
+          <h2>WhatsApp Sessions</h2>
+          <div class="sh-actions">
+            <button class="btn btn-secondary btn-sm" onclick="loadSessions()">↻ Refresh</button>
+            <button class="btn btn-primary" onclick="tog('fp-session')">+ Link Profile</button>
+          </div>
+        </div>
+
+        <div id="fp-session" class="form-panel">
+          <div class="fg"><label>Select Profile *</label><select id="sess-profile"></select></div>
+          <div class="form-footer">
+            <button class="btn btn-primary" onclick="createSession()">Create Session</button>
+            <button class="btn btn-secondary" onclick="tog('fp-session')">Cancel</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="tw">
+            <table>
+              <thead><tr><th>Profile</th><th>Status</th><th>Phone</th><th>Last Checked</th><th>Actions</th></tr></thead>
+              <tbody id="sessions-tb"><tr><td colspan="5" style="text-align:center;padding:30px"><div class="spin"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= CONTACTS ======= -->
+      <div id="page-contacts" class="page">
+        <div class="stabs">
+          <div class="stab active" onclick="stab(this,'ct-tab-contacts')">Contacts</div>
+          <div class="stab" onclick="stab(this,'ct-tab-groups')">Groups</div>
+        </div>
+
+        <div id="ct-tab-contacts">
+          <div class="sh">
+            <h2>Contacts</h2>
+            <div class="sh-actions">
+              <button class="btn btn-secondary btn-sm" onclick="loadContacts()">↻ Refresh</button>
+              <button class="btn btn-secondary btn-sm" onclick="tog('fp-bulk')">⬆ Bulk Import</button>
+              <button class="btn btn-primary" onclick="tog('fp-contact')">+ Add Contact</button>
+            </div>
+          </div>
+
+          <div id="fp-contact" class="form-panel">
+            <div class="fr">
+              <div class="fg"><label>Full Name *</label><input id="ct-name" type="text" placeholder="John Doe"></div>
+              <div class="fg"><label>Phone (no + prefix) *</label><input id="ct-phone" type="text" placeholder="919876543210"></div>
+            </div>
+            <div class="fr">
+              <div class="fg"><label>Email</label><input id="ct-email" type="text" placeholder="john@example.com"></div>
+              <div class="fg"><label>Tags (comma separated)</label><input id="ct-tags" type="text" placeholder="vip, lead"></div>
+            </div>
+            <div class="form-footer">
+              <button class="btn btn-primary" onclick="createContact()">Add Contact</button>
+              <button class="btn btn-secondary" onclick="tog('fp-contact')">Cancel</button>
+            </div>
+          </div>
+
+          <div id="fp-bulk" class="form-panel">
+            <div class="fg">
+              <label>JSON Array of contacts</label>
+              <textarea id="bulk-json" placeholder='[{"name":"John Doe","phone_number":"919876543210"},{"name":"Jane","phone_number":"12025550123"}]' style="min-height:100px"></textarea>
+            </div>
+            <div class="form-footer">
+              <button class="btn btn-primary" onclick="bulkImport()">Import Contacts</button>
+              <button class="btn btn-secondary" onclick="tog('fp-bulk')">Cancel</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="tw">
+              <table>
+                <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Tags</th><th>Active</th><th></th></tr></thead>
+                <tbody id="contacts-tb"><tr><td colspan="6" style="text-align:center;padding:28px"><div class="spin"></div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="ct-tab-groups" style="display:none">
+          <div class="sh">
+            <h2>Contact Groups</h2>
+            <div class="sh-actions">
+              <button class="btn btn-secondary btn-sm" onclick="loadGroups()">↻ Refresh</button>
+              <button class="btn btn-primary" onclick="tog('fp-group')">+ New Group</button>
+            </div>
+          </div>
+
+          <div id="fp-group" class="form-panel">
+            <div class="fg"><label>Group Name *</label><input id="grp-name" type="text" placeholder="VIP Clients"></div>
+            <div class="form-footer">
+              <button class="btn btn-primary" onclick="createGroup()">Create Group</button>
+              <button class="btn btn-secondary" onclick="tog('fp-group')">Cancel</button>
+            </div>
+          </div>
+
+          <div id="groups-list"></div>
+        </div>
+      </div>
+
+      <!-- ======= MESSAGING ======= -->
+      <div id="page-messaging" class="page">
+        <div class="stabs">
+          <div class="stab active" onclick="stab(this,'ms-tab-templates')">Templates</div>
+          <div class="stab" onclick="stab(this,'ms-tab-campaigns');loadCampaigns()">Campaigns</div>
+          <div class="stab" onclick="stab(this,'ms-tab-logs');loadAllLogs()">All Logs</div>
+          <div class="stab" onclick="stab(this,'ms-tab-direct')">Send Direct</div>
+        </div>
+
+        <!-- Templates -->
+        <div id="ms-tab-templates">
+          <div class="sh">
+            <h2>Message Templates</h2>
+            <div class="sh-actions">
+              <button class="btn btn-secondary btn-sm" onclick="loadTemplates()">↻ Refresh</button>
+              <button class="btn btn-primary" onclick="tog('fp-template')">+ New Template</button>
+            </div>
+          </div>
+          <div id="fp-template" class="form-panel">
+            <div class="fg"><label>Template Name *</label><input id="tpl-name" type="text" placeholder="Product Announcement"></div>
+            <div class="fg">
+              <label>Message Body (placeholders: {name}, {phone_number})</label>
+              <textarea id="tpl-body" placeholder="Hi {name}! We have something special just for you. 🎉"></textarea>
+            </div>
+            <div class="form-footer">
+              <button class="btn btn-primary" onclick="createTemplate()">Save Template</button>
+              <button class="btn btn-secondary" onclick="tog('fp-template')">Cancel</button>
+            </div>
+          </div>
+          <div id="templates-list"></div>
+        </div>
+
+        <!-- Campaigns -->
+        <div id="ms-tab-campaigns" style="display:none">
+          <div class="sh">
+            <h2>Campaigns</h2>
+            <div class="sh-actions">
+              <button class="btn btn-secondary btn-sm" onclick="loadCampaigns()">↻ Refresh</button>
+              <button class="btn btn-primary" onclick="openCampaignForm()">+ New Campaign</button>
+            </div>
+          </div>
+          <div id="fp-campaign" class="form-panel">
+            <div class="fr">
+              <div class="fg"><label>Campaign Name *</label><input id="cp-name" type="text" placeholder="April Outreach"></div>
+              <div class="fg"><label>GoLogin Profile *</label><select id="cp-profile"><option value="">— Select —</option></select></div>
+            </div>
+            <div class="fg"><label>Template (optional — OR write custom message below)</label><select id="cp-template"><option value="">— No template, use custom message —</option></select></div>
+            <div class="fg"><label>Custom Message (if no template)</label><textarea id="cp-custom" placeholder="Hi {name}, this is a personal message for you!"></textarea></div>
+            <div class="fr">
+              <div class="fg"><label>Min Delay (seconds)</label><input id="cp-min" type="number" value="180" min="5"></div>
+              <div class="fg"><label>Max Delay (seconds)</label><input id="cp-max" type="number" value="240" min="5"></div>
+            </div>
+            <div class="fr">
+              <div class="fg"><label>Timezone</label><input id="cp-tz" type="text" value="Asia/Kolkata"></div>
+              <div class="fg" style="display:flex;align-items:flex-end">
+                <div class="fc" style="margin-bottom:0"><input type="checkbox" id="cp-windows" checked><label for="cp-windows">Enforce time windows (8-11am, 1-4pm, 7-10pm)</label></div>
+              </div>
+            </div>
+            <div class="fr">
+              <div class="fg"><label>Target Contacts (Ctrl+click for multiple)</label><select id="cp-contacts" multiple style="min-height:90px"></select></div>
+              <div class="fg"><label>Target Groups (Ctrl+click for multiple)</label><select id="cp-groups" multiple style="min-height:90px"></select></div>
+            </div>
+            <div class="fc">
+              <input type="checkbox" id="cp-auto"><label for="cp-auto">🤖 Auto-Send — message every new contact added by me immediately (real-time, no click needed)</label>
+            </div>
+            <div class="form-footer">
+              <button class="btn btn-primary" onclick="createCampaign()">Create Campaign</button>
+              <button class="btn btn-secondary" onclick="tog('fp-campaign')">Cancel</button>
+            </div>
+          </div>
+          <div id="campaigns-list"></div>
+        </div>
+
+        <!-- All Logs -->
+        <div id="ms-tab-logs" style="display:none">
+          <div class="sh"><h2>All Message Logs</h2><button class="btn btn-secondary btn-sm" onclick="loadAllLogs()">↻ Refresh</button></div>
+          <div class="card">
+            <div class="tw">
+              <table>
+                <thead><tr><th>Phone</th><th>Message</th><th>Status</th><th>Sent At</th></tr></thead>
+                <tbody id="all-logs-tb"><tr><td colspan="4" style="text-align:center;color:#bbb;padding:28px">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Direct Send -->
+        <div id="ms-tab-direct" style="display:none">
+          <div class="sh"><h2>Send Direct Message</h2></div>
+          <div class="card" style="max-width:500px">
+            <div class="fg"><label>GoLogin Profile *</label><select id="dm-profile"><option value="">— Select —</option></select></div>
+            <div class="fg"><label>Phone Number (no + prefix) *</label><input id="dm-phone" type="text" placeholder="919876543210"></div>
+            <div class="fg"><label>Message *</label><textarea id="dm-msg" placeholder="Hi! This is a test message."></textarea></div>
+            <button class="btn btn-primary" onclick="sendDirect()">Send Now</button>
+            <div id="dm-result" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= INBOX ======= -->
+      <div id="page-inbox" class="page">
+        <div class="sh">
+          <h2>Incoming Messages</h2>
+          <div class="sh-actions">
+            <button class="btn btn-secondary btn-sm" onclick="loadInbox()">↻ Refresh</button>
+            <button class="btn btn-warning btn-sm" onclick="markAllRead()">✓ Mark All Read</button>
+          </div>
+        </div>
+        <div class="realtime-bar">
+          <span class="ws-dot ws-connected"></span>
+          <strong>Real-time</strong> — The Chrome Extension polls WhatsApp Web every 15 s and pushes new messages here instantly via WebSocket. Also supported: Celery Beat polling (<strong>Admin → Periodic Tasks → sessions.poll_all_inboxes → 30 s</strong>).
+        </div>
+        <div class="card">
+          <div class="tw">
+            <table>
+              <thead><tr><th>Profile</th><th>From</th><th>Preview</th><th>Unread</th><th>Received</th><th></th></tr></thead>
+              <tbody id="inbox-tb"><tr><td colspan="6" style="text-align:center;padding:28px"><div class="spin"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= AUTOMATION ======= -->
+      <div id="page-automation" class="page">
+        <div class="sh"><h2>🤖 Full Automation Setup</h2></div>
+
+        <!-- Step 1 -->
+        <div class="card">
+          <div class="card-title">Step 1 — Install the Chrome Extension (once per profile)</div>
+          <p style="font-size:13px;line-height:1.7;color:#444">
+            The extension lives in <code style="background:#f5f5f5;padding:2px 6px;border-radius:4px">Backend/extension/</code>.
+            Load it into each AdsPower Chrome profile using <strong>Load Unpacked</strong>
+            (chrome://extensions → Developer mode ON → Load unpacked → select the <code>extension/</code> folder).<br><br>
+            <strong>After the first launch of each profile</strong>, the system also tries to auto-copy the extension
+            files into the AdsPower profile directory automatically. You still need to click <em>Load Unpacked</em>
+            once to register it with Chrome.
+          </p>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <span class="ai-badge">ONE-TIME SETUP</span>
+            <span class="auto-pill">✓ Auto-installed on subsequent launches</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="card">
+          <div class="card-title">Step 2 — Set the Profile ID in the Extension Popup</div>
+          <p style="font-size:13px;line-height:1.7;color:#444">
+            After loading the extension, click its icon in the Chrome toolbar.<br>
+            Paste your <strong>AdsPower Profile ID</strong> (the short alphanumeric ID from the AdsPower profile list)
+            and click <strong>Save &amp; Connect</strong>.<br><br>
+            The popup will show <span style="color:#25d366;font-weight:600">● Connected</span> when the extension
+            has a live WebSocket connection to your Django server. From this point the extension is
+            fully autonomous — it sends messages, reports results, and scans for incoming messages
+            all by itself.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="card">
+          <div class="card-title">Step 3 — Import Contacts via Admin Portal</div>
+          <p style="font-size:13px;line-height:1.7;color:#444">
+            Go to <strong>Admin → Contacts → Import CSV</strong>. Upload a CSV with columns:
+            <code>name, phone_number, email, tags, notes</code>.<br><br>
+            Every contact in the CSV will be created instantly. If you have an <strong>Auto-Send campaign running</strong>
+            (see Step 4), each new contact triggers an immediate personalized message — no clicks needed.
+          </p>
+          <a href="/admin/contacts/contact/" target="_blank" class="btn btn-primary btn-sm" style="margin-top:10px">
+            Open Admin → Contacts
+          </a>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="card">
+          <div class="card-title">Step 4 — Create an Auto-Send Campaign</div>
+          <p style="font-size:13px;line-height:1.7;color:#444">
+            In <strong>Messaging → Campaigns → New Campaign</strong>, tick the
+            <strong>🤖 Auto-Send</strong> checkbox and set status to <em>Running</em>.<br><br>
+            From now on: you import contacts → contacts are saved → signal fires → AI personalizes the message →
+            task is pushed via WebSocket to the extension → extension sends the message in WhatsApp Web →
+            result is saved in Message Logs. <strong>Zero human clicks required.</strong>
+          </p>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <span class="auto-pill">✓ Fully automated</span>
+            <span class="ai-badge">AI PERSONALIZED</span>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="card">
+          <div class="card-title">Step 5 — Enable AI (optional)</div>
+          <p style="font-size:13px;line-height:1.7;color:#444">
+            Add your Claude API key to <code>.env</code>:
+          </p>
+          <pre style="background:#1a1a2e;color:#25d366;padding:12px;border-radius:6px;font-size:12px;margin-top:8px;overflow-x:auto">CLAUDE_API_KEY=sk-ant-api03-your-key-here</pre>
+          <p style="font-size:13px;line-height:1.7;color:#444;margin-top:8px">
+            With AI enabled: outbound messages are rewritten to sound natural for each contact
+            (not just {name} replacement), and incoming replies get smart AI-generated responses automatically.
+            Without a key, the system still works — it just uses plain template substitution.
+          </p>
+        </div>
+
+        <!-- Architecture diagram -->
+        <div class="card">
+          <div class="card-title">How it all connects</div>
+          <pre style="background:#1a1a2e;color:#c3cfe2;padding:16px;border-radius:8px;font-size:12px;line-height:1.8;overflow-x:auto">You import contacts (Admin Portal CSV)
+    ↓  Django signal fires immediately
+    ↓  AI personalizes the message (Claude API)
+    ↓  Task pushed via WebSocket
+Chrome Extension (inside AdsPower profile)
+    ↓  Navigates WhatsApp Web to /send?phone=...&text=...
+    ↓  Clicks Send button
+WhatsApp Web → Contact's phone 📱
+    ↓  (15 s later) Extension scans for replies
+    ↓  Sends incoming messages to Django via WebSocket
+    ↓  AI generates reply → extension sends it back
+Fully automated loop — no human needed</pre>
+        </div>
+
+        <!-- Running services -->
+        <div class="card">
+          <div class="card-title">Services that must be running</div>
+          <table>
+            <thead><tr><th>Service</th><th>Command</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Django (ASGI)</strong></td><td><code>daphne config.asgi:application -p 8000</code></td><td>HTTP + WebSocket server</td></tr>
+              <tr><td><strong>Celery Worker</strong></td><td><code>python -m celery -A config worker -l info</code></td><td>Background campaign tasks</td></tr>
+              <tr><td><strong>Celery Beat</strong></td><td><code>python -m celery -A config beat -l info</code></td><td>Inbox polling schedule</td></tr>
+              <tr><td><strong>Redis</strong></td><td><code>redis-server</code> (or WSL/Docker)</td><td>Task queue + WebSocket channel layer</td></tr>
+              <tr><td><strong>AdsPower</strong></td><td>Open the AdsPower app</td><td>Browser profile manager</td></tr>
+            </tbody>
+          </table>
+          <div class="alert alert-info" style="margin-top:14px;font-size:12px">
+            <strong>Note:</strong> Use <code>daphne</code> instead of <code>python manage.py runserver</code>
+            to get WebSocket support. The regular runserver does not support WebSockets.
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= SETTINGS ======= -->
+      <div id="page-settings" class="page">
+        <div class="sh"><h2>⚙ System Settings</h2><div class="sh-actions"><button class="btn btn-secondary btn-sm" onclick="loadSettings()">↻ Refresh</button></div></div>
+
+        <!-- Status card -->
+        <div class="card" id="settings-status-card">
+          <div class="card-title">System Status</div>
+          <div id="settings-status-body" style="font-size:13px;color:#888">Loading…</div>
+        </div>
+
+        <!-- Claude API key -->
+        <div class="card">
+          <div class="card-title">🤖 Claude AI — Message Personalization &amp; Auto-Reply</div>
+          <p style="font-size:13px;color:#555;line-height:1.7;margin-bottom:12px">
+            Add your Claude API key to <strong>.env</strong> to enable AI-personalized outbound messages
+            and automatic AI replies to incoming messages. Without the key, the system uses plain
+            <code>{name}</code> template substitution.
+          </p>
+          <div style="background:#1a1a2e;color:#25d366;padding:12px;border-radius:6px;font-size:12px;margin-bottom:10px">
+            # In C:\Users\admin\Desktop\Backend\.env<br>
+            CLAUDE_API_KEY=sk-ant-api03-your-key-here
+          </div>
+          <p style="font-size:12px;color:#888">After editing .env, restart daphne for the change to take effect.</p>
+          <a href="https://console.anthropic.com/" target="_blank" class="btn btn-primary btn-sm" style="margin-top:8px">Get API Key →</a>
+        </div>
+
+        <!-- Webhook -->
+        <div class="card">
+          <div class="card-title">🔗 Contact Webhook — Add Contacts from External Sources</div>
+          <p style="font-size:13px;color:#555;line-height:1.7;margin-bottom:10px">
+            Any system (CRM, landing page, Zapier, Make.com) can POST to this URL to add a contact.
+            If an Auto-Send campaign is active, the message fires instantly.
+          </p>
+          <div id="webhook-url-block" style="background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:12px;font-size:12px;font-family:monospace;word-break:break-all;margin-bottom:10px">Loading…</div>
+          <p style="font-size:12px;color:#555;margin-bottom:6px"><strong>Request body (JSON):</strong></p>
+          <div style="background:#1a1a2e;color:#c3cfe2;padding:12px;border-radius:6px;font-size:12px">
+            {<br>
+            &nbsp;&nbsp;"name": "Rahul Sharma",<br>
+            &nbsp;&nbsp;"phone_number": "919876543210",<br>
+            &nbsp;&nbsp;"email": "rahul@example.com",<br>
+            &nbsp;&nbsp;"tags": ["lead"],<br>
+            &nbsp;&nbsp;"notes": "From landing page"<br>
+            }
+          </div>
+          <p style="font-size:12px;color:#888;margin-top:8px">Change <code>WEBHOOK_SECRET_KEY</code> in .env before sharing the URL publicly.</p>
+        </div>
+
+        <!-- Scheduler -->
+        <div class="card">
+          <div class="card-title">🕐 Campaign Scheduler — Run Campaigns Automatically (No Redis Needed)</div>
+          <p style="font-size:13px;color:#555;line-height:1.7;margin-bottom:10px">
+            Set a <strong>Scheduled At</strong> date/time on a campaign, then run this command
+            every 5 minutes via Windows Task Scheduler to dispatch it automatically:
+          </p>
+          <div style="background:#1a1a2e;color:#25d366;padding:12px;border-radius:6px;font-size:12px;margin-bottom:10px">
+            cd C:\Users\admin\Desktop\Backend<br>
+            .\venv\Scripts\activate<br>
+            python manage.py run_scheduled_campaigns
+          </div>
+          <p style="font-size:13px;color:#555;font-weight:600;margin-bottom:6px">Windows Task Scheduler setup:</p>
+          <ol style="font-size:13px;color:#555;line-height:2;padding-left:18px">
+            <li>Open <strong>Task Scheduler</strong> (search in Start)</li>
+            <li>Click <strong>Create Basic Task</strong></li>
+            <li>Trigger: <strong>Daily</strong> → Repeat every <strong>5 minutes</strong></li>
+            <li>Action: <strong>Start a program</strong></li>
+            <li>Program: <code>C:\Users\admin\Desktop\Backend\venv\Scripts\python.exe</code></li>
+            <li>Arguments: <code>manage.py run_scheduled_campaigns</code></li>
+            <li>Start in: <code>C:\Users\admin\Desktop\Backend</code></li>
+          </ol>
+        </div>
+
+        <!-- Services -->
+        <div class="card">
+          <div class="card-title">▶ Required Services (start these to run the system)</div>
+          <table>
+            <thead><tr><th>Service</th><th>Command</th><th>Required?</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Daphne (ASGI)</strong></td><td><code>daphne config.asgi:application -b 127.0.0.1 -p 8000</code></td><td><span class="badge badge-sent">Always</span></td></tr>
+              <tr><td><strong>AdsPower App</strong></td><td>Open the AdsPower desktop app</td><td><span class="badge badge-sent">Always</span></td></tr>
+              <tr><td><strong>Chrome Extension</strong></td><td>Load from <code>extension/</code> folder, paste profile ID</td><td><span class="badge badge-sent">Always</span></td></tr>
+              <tr><td><strong>Scheduler (optional)</strong></td><td><code>python manage.py run_scheduled_campaigns</code></td><td><span class="badge badge-inactive">Scheduled campaigns only</span></td></tr>
+              <tr><td><strong>Redis + Celery</strong></td><td>Not required — auto_send works without it</td><td><span class="badge badge-inactive">Optional</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- QR Code -->
+<div class="modal-bg" id="m-qr">
+  <div class="modal" style="max-width:360px">
+    <h3>Scan QR Code to Login</h3>
+    <div class="qr-wrap">
+      <img id="qr-img" src="" alt="QR Code">
+      <p class="qr-hint">Open WhatsApp on your phone → Linked Devices → Link a Device → Scan this code</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cm('m-qr')">Close</button>
+      <button class="btn btn-primary" onclick="recheckQR()">Re-check Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot -->
+<div class="modal-bg" id="m-ss">
+  <div class="modal modal-xl">
+    <h3>Browser Screenshot</h3>
+    <div class="ss-wrap"><img id="ss-img" src="" alt="Screenshot"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="cm('m-ss')">Close</button></div>
+  </div>
+</div>
+
+<!-- Campaign Logs -->
+<div class="modal-bg" id="m-logs">
+  <div class="modal modal-xl">
+    <h3 id="m-logs-title">Campaign Logs</h3>
+    <div class="tw" style="max-height:460px;overflow-y:auto">
+      <table>
+        <thead><tr><th>Phone</th><th>Message</th><th>Status</th><th>Error</th><th>Sent At</th></tr></thead>
+        <tbody id="m-logs-tb"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="cm('m-logs')">Close</button></div>
+  </div>
+</div>
+
+<!-- Add Contacts to Group -->
+<div class="modal-bg" id="m-addgrp">
+  <div class="modal">
+    <h3>Add Contacts to Group</h3>
+    <input type="hidden" id="addgrp-id">
+    <div class="fg"><label>Select Contacts (Ctrl+click for multiple)</label><select id="addgrp-sel" multiple style="min-height:150px"></select></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cm('m-addgrp')">Cancel</button>
+      <button class="btn btn-primary" onclick="addContactsToGroup()">Add Selected</button>
+    </div>
+  </div>
+</div>
+
+<!-- Template Preview -->
+<div class="modal-bg" id="m-preview">
+  <div class="modal">
+    <h3>Preview Template</h3>
+    <input type="hidden" id="prev-id">
+    <div class="fr">
+      <div class="fg"><label>Sample Name</label><input id="prev-name" type="text" value="John Doe"></div>
+      <div class="fg"><label>Sample Phone</label><input id="prev-phone" type="text" value="919876543210"></div>
+    </div>
+    <button class="btn btn-info btn-sm" onclick="runPreview()" style="margin-bottom:12px">Render</button>
+    <div id="prev-result" class="alert alert-success" style="display:none;white-space:pre-wrap;font-size:14px"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="cm('m-preview')">Close</button></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const API = '';
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let _token   = localStorage.getItem('wa_token')   || '';
+let _refresh = localStorage.getItem('wa_refresh') || '';
+let _qrSessionId = null;
+let _inboxTimer  = null;
+
+// ═══════════════════════════════════════════════════════
+// CORE API
+// ═══════════════════════════════════════════════════════
+async function api(method, path, body = null) {
+  const h = { 'Content-Type': 'application/json' };
+  if (_token) h['Authorization'] = `Bearer ${_token}`;
+  const opts = { method, headers: h };
+  if (body !== null) opts.body = JSON.stringify(body);
+
+  let r;
+  try {
+    r = await fetch(API + path, opts);
+  } catch (e) {
+    console.error('[Dashboard] API request failed', { method, path, error: e.message });
+    throw e;
+  }
+
+  if (r.status === 401 && _refresh) {
+    const ok = await tryRefresh();
+    if (ok) {
+      h['Authorization'] = `Bearer ${_token}`;
+      try {
+        r = await fetch(API + path, { ...opts, headers: h });
+      } catch (e) {
+        console.error('[Dashboard] API retry failed', { method, path, error: e.message });
+        throw e;
+      }
+    } else { doLogout(); throw new Error('Session expired'); }
+  }
+  if (!r.ok) console.error('[Dashboard] API non-OK response', { method, path, status: r.status });
+  return r;
+}
+
+async function apij(method, path, body = null) {
+  const r = await api(method, path, body);
+  if (r.status === 204) return null;
+  const j = await r.json();
+  if (!r.ok) {
+    console.error('[Dashboard] API JSON error payload', { method, path, payload: j });
+    throw new Error(JSON.stringify(j));
+  }
+  return j;
+}
+
+async function tryRefresh() {
+  try {
+    const r = await fetch(`${API}/api/auth/token/refresh/`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ refresh: _refresh }),
+    });
+    if (r.ok) {
+      const j = await r.json();
+      _token = j.access;
+      localStorage.setItem('wa_token', _token);
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
+async function doLogin() {
+  const u = v('l-user'), p = v('l-pass');
+  const btn = $('login-btn'), err = $('login-err');
+  if (!u || !p) { showEl(err, 'Enter username and password.'); return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  err.style.display = 'none';
+  try {
+    const r = await fetch(`${API}/api/auth/token/`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username:u, password:p }),
+    });
+    const j = await r.json();
+    if (r.ok) {
+      _token = j.access; _refresh = j.refresh;
+      localStorage.setItem('wa_token', _token);
+      localStorage.setItem('wa_refresh', _refresh);
+      mountApp(u);
+    } else {
+      showEl(err, j.detail || 'Invalid credentials.');
+    }
+  } catch {
+    showEl(err, 'Cannot reach server. Is Django running on port 8000?');
+  }
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+
+function doLogout() {
+  _token = _refresh = '';
+  localStorage.removeItem('wa_token');
+  localStorage.removeItem('wa_refresh');
+  if (_inboxTimer) clearInterval(_inboxTimer);
+  $('app').style.display = 'none';
+  $('login-screen').style.display = 'flex';
+}
+
+function mountApp(username) {
+  $('login-screen').style.display = 'none';
+  $('app').style.display = 'flex';
+  $('nav-user').textContent = username || 'User';
+  showPage('profiles');
+  _inboxTimer = setInterval(refreshInboxBadge, 60000);
+  refreshInboxBadge();
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  $('page-'+name).classList.add('active');
+  $('nav-'+name).classList.add('active');
+  if (name==='profiles')   loadProfiles();
+  if (name==='sessions')   { loadSessions(); fillProfileSelects(); }
+  if (name==='contacts')   { loadContacts(); loadGroups(); }
+  if (name==='messaging')  { loadTemplates(); fillProfileSelects(); fillContactSelects(); }
+  if (name==='inbox')      loadInbox();
+  if (name==='settings')   loadSettings();
+  // automation page is static — no data load needed
+}
+
+function stab(el, showId) {
+  const container = el.closest('.stabs');
+  container.querySelectorAll('.stab').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  const page = container.parentElement;
+  page.querySelectorAll(':scope > div[id*="-tab-"]').forEach(d => d.style.display='none');
+  $(showId).style.display = 'block';
+}
+
+function tog(id)  { const el=$(id); el.classList.toggle('open'); }
+function om(id)   { $(id).classList.add('open'); }
+function cm(id)   { $(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════
+// TOASTS & HELPERS
+// ═══════════════════════════════════════════════════════
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`; t.textContent = msg;
+  $('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+function $(id)   { return document.getElementById(id); }
+function v(id)   { return $(id).value.trim(); }
+function showEl(el, msg) { el.textContent=msg; el.style.display='block'; }
+function esc(s)  { if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(iso) { if(!iso)return'—'; return new Date(iso).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'}); }
+function bdg(s)  { return `<span class="badge badge-${s}">${esc(s || 'unknown')}</span>`; }
+function list(d) {
+  if (Array.isArray(d)) return d;
+  if (d && Array.isArray(d.results)) return d.results;
+  console.error('[Dashboard] Invalid list payload', d);
+  return [];
+}
+async function allPages(path) {
+  const out = [];
+  let next = path;
+  while (next) {
+    const url = next.startsWith('http') ? next.replace(location.origin, '') : next;
+    const data = await apij('GET', url);
+    if (Array.isArray(data)) return out.concat(data);
+    if (!data || !Array.isArray(data.results)) {
+      console.error('[Dashboard] Invalid paginated payload', { path, data });
+      return out;
+    }
+    out.push(...data.results);
+    next = data.next || '';
+  }
+  return out;
+}
+function logTarget(l) {
+  return l.display_number || l.phone_number || l.contact_phone || l.whatsapp_jid || '—';
+}
+
+// ═══════════════════════════════════════════════════════
+// PROFILES
+// ═══════════════════════════════════════════════════════
+async function loadProfiles() {
+  const g = $('profiles-grid');
+  g.innerHTML = '<div class="empty"><div class="spin"></div></div>';
+  try {
+    const items = await allPages('/api/profiles/');
+    console.log('[Dashboard] Profiles loaded', { count: items.length, names: items.map(p => p.name) });
+    if (!items.length) {
+      g.innerHTML = '<div class="empty"><div class="ei">📱</div><p>No profiles yet. Click "+ Add Profile".</p></div>';
+      return;
+    }
+    g.innerHTML = items.map(p => `
+      <div class="pc ${p.status}">
+        <div class="pc-name">${esc(p.name)}</div>
+        <div class="pc-id">${p.gologin_profile_id||'No GoLogin ID'}</div>
+        <div class="pc-meta">${bdg(p.status)} <small style="color:#bbb">${p.os_type}</small></div>
+        <div class="pc-actions">
+          ${p.status!=='active'&&p.status!=='launching'?`<button class="btn btn-primary btn-xs" onclick="launchProfile(${p.id})">▶ Launch</button>`:''}
+          ${p.status==='active'||p.status==='launching'?`<button class="btn btn-warning btn-xs" onclick="stopProfile(${p.id})">⏹ Stop</button>`:''}
+          <button class="btn btn-info btn-xs" onclick="driverStatus(${p.id})">? Status</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteProfile(${p.id})">🗑</button>
+        </div>
+        ${p.last_launched_at?`<div style="font-size:11px;color:#bbb;margin-top:8px">Last: ${fmtDate(p.last_launched_at)}</div>`:''}
+      </div>`).join('');
+  } catch(e) { console.error('[Dashboard] loadProfiles failed', e); toast(e.message,'error'); }
+}
+
+async function createProfile() {
+  const name=v('pf-name'), os_type=$('pf-os').value, sync=$('pf-sync').checked;
+  const business_context=$('pf-context')?$('pf-context').value.trim():'';
+  if(!name){toast('Profile name is required','error');return;}
+  try {
+    await apij('POST','/api/profiles/',{name,os_type,sync_with_gologin:sync,business_context});
+    toast('Profile created!'); $('pf-name').value=''; $('pf-context').value=''; tog('fp-profile'); loadProfiles();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function launchProfile(id) {
+  toast('Launching profile…','info');
+  try { await apij('POST',`/api/profiles/${id}/launch/`); toast('Profile launched ✓'); loadProfiles(); }
+  catch(e){toast(e.message,'error');loadProfiles();}
+}
+async function stopProfile(id) {
+  try { await apij('POST',`/api/profiles/${id}/stop/`); toast('Profile stopped'); loadProfiles(); }
+  catch(e){toast(e.message,'error');}
+}
+async function deleteProfile(id) {
+  if(!confirm('Delete this profile? Also removes from GoLogin.'))return;
+  try { await api('DELETE',`/api/profiles/${id}/`); toast('Deleted'); loadProfiles(); }
+  catch(e){toast(e.message,'error');}
+}
+async function driverStatus(id) {
+  try {
+    const d=await apij('GET',`/api/profiles/${id}/driver_status/`);
+    toast(`Driver: ${d.driver_active?'✓ Running':'✗ Not running'} | DB: ${d.db_status}`, d.driver_active?'success':'info');
+  } catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// SESSIONS
+// ═══════════════════════════════════════════════════════
+async function loadSessions() {
+  const tb=$('sessions-tb');
+  tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:28px"><div class="spin"></div></td></tr>';
+  try {
+    const items=list(await apij('GET','/api/sessions/'));
+    if(!items.length){tb.innerHTML='<tr><td colspan="5" class="empty" style="padding:32px">No sessions. Link a profile first.</td></tr>';return;}
+    tb.innerHTML=items.map(s=>`
+      <tr>
+        <td><strong>${esc(s.profile_name)}</strong></td>
+        <td>${bdg(s.status)}</td>
+        <td style="font-size:12px">${s.phone_number||'—'}</td>
+        <td style="font-size:11px;color:#aaa">${fmtDate(s.last_checked_at)}</td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-xs" onclick="checkStatus(${s.id})">${s.status==='qr_required'?'📷 QR Code':'⟳ Check'}</button>
+            <button class="btn btn-secondary btn-xs" onclick="takeScreenshot(${s.id})">🖥 Screenshot</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e){toast(e.message,'error');}
+}
+
+async function fillProfileSelects() {
+  try {
+    const items=await allPages('/api/profiles/');
+    console.log('[Dashboard] Profile selects loaded', { count: items.length });
+    const opts = items.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.status})</option>`).join('');
+    const sessSel=$('sess-profile'); if(sessSel)sessSel.innerHTML=opts;
+    const cpSel=$('cp-profile');    if(cpSel)cpSel.innerHTML=`<option value="">— Select Profile —</option>`+items.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    const dmSel=$('dm-profile');    if(dmSel)dmSel.innerHTML=`<option value="">— Select Profile —</option>`+items.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  } catch(e){ console.error('[Dashboard] fillProfileSelects failed', e); }
+}
+
+async function createSession() {
+  const profile=v('sess-profile');
+  if(!profile){toast('Select a profile','error');return;}
+  try { await apij('POST','/api/sessions/',{profile:parseInt(profile)}); toast('Session created!'); tog('fp-session'); loadSessions(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function checkStatus(sid) {
+  toast('Checking WhatsApp status…','info');
+  _qrSessionId=sid;
+  try {
+    const d=await apij('POST',`/api/sessions/${sid}/check_status/`);
+    if(d.status==='qr_required'&&d.qr_code_base64){
+      $('qr-img').src=`data:image/png;base64,${d.qr_code_base64}`;
+      om('m-qr');
+    } else if(d.status==='logged_in'){
+      toast('WhatsApp logged in ✓');
+    } else {
+      toast(`Status: ${d.status}`, 'info');
+    }
+    loadSessions();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function recheckQR() {
+  cm('m-qr');
+  if(_qrSessionId) await checkStatus(_qrSessionId);
+}
+
+async function takeScreenshot(sid) {
+  toast('Taking screenshot…','info');
+  try {
+    const d=await apij('POST',`/api/sessions/${sid}/screenshot/`);
+    $('ss-img').src=`data:image/png;base64,${d.screenshot_base64}`;
+    om('m-ss');
+  } catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════════════════════
+async function loadContacts() {
+  const tb=$('contacts-tb');
+  tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px"><div class="spin"></div></td></tr>';
+  try {
+    const items=await allPages('/api/contacts/');
+    if(!items.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#bbb;padding:28px">No contacts yet.</td></tr>';return;}
+    tb.innerHTML=items.map(c=>`
+      <tr>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td><code style="font-size:11px">${esc(c.phone_number)}</code></td>
+        <td style="font-size:12px">${c.email||'—'}</td>
+        <td style="font-size:12px">${(c.tags||[]).join(', ')||'—'}</td>
+        <td>${c.is_active?'✓':'✗'}</td>
+        <td><button class="btn btn-danger btn-xs" onclick="deleteContact(${c.id})">🗑</button></td>
+      </tr>`).join('');
+  } catch(e){toast(e.message,'error');}
+}
+
+async function fillContactSelects() {
+  try {
+    const items=await allPages('/api/contacts/');
+    const opts=items.map(c=>`<option value="${c.id}">${esc(c.name)} — ${c.phone_number}</option>`).join('');
+    const cpSel=$('cp-contacts'); if(cpSel)cpSel.innerHTML=opts;
+    const addSel=$('addgrp-sel'); if(addSel)addSel.innerHTML=opts;
+  } catch(e){ console.error('[Dashboard] fillContactSelects failed', e); }
+}
+
+async function createContact() {
+  const name=v('ct-name'),phone=v('ct-phone'),email=v('ct-email');
+  const tags=$('ct-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  if(!name||!phone){toast('Name and phone required','error');return;}
+  try {
+    await apij('POST','/api/contacts/',{name,phone_number:phone,email,tags});
+    toast('Contact added!'); ['ct-name','ct-phone','ct-email','ct-tags'].forEach(i=>$(i).value='');
+    tog('fp-contact'); loadContacts();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function deleteContact(id) {
+  if(!confirm('Delete this contact?'))return;
+  try { await api('DELETE',`/api/contacts/${id}/`); toast('Deleted'); loadContacts(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function bulkImport() {
+  let contacts;
+  try { contacts=JSON.parse($('bulk-json').value); } catch{toast('Invalid JSON','error');return;}
+  try {
+    const d=await apij('POST','/api/contacts/bulk_import/',{contacts});
+    toast(`Imported: ${d.created.length} | Skipped: ${d.skipped.length}`);
+    $('bulk-json').value=''; tog('fp-bulk'); loadContacts();
+  } catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// GROUPS
+// ═══════════════════════════════════════════════════════
+async function loadGroups() {
+  const el=$('groups-list');
+  el.innerHTML='<div class="empty"><div class="spin"></div></div>';
+  try {
+    const items=list(await apij('GET','/api/contacts/groups/'));
+    if(!items.length){el.innerHTML='<div class="empty"><div class="ei">👥</div><p>No groups yet.</p></div>';return;}
+    el.innerHTML=items.map(g=>`
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">${esc(g.name)} <small style="color:#bbb;font-weight:400">${g.contact_count} contacts</small></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          ${(g.contacts||[]).slice(0,6).map(c=>`<span style="background:#f0f2f5;padding:2px 8px;border-radius:10px;font-size:12px">${esc(c.name||c)}</span>`).join('')}
+          ${g.contact_count>6?`<span style="font-size:12px;color:#aaa">+${g.contact_count-6} more</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm" onclick="openAddContacts(${g.id})">+ Add Contacts</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteGroup(${g.id})">🗑 Delete</button>
+        </div>
+      </div>`).join('');
+    // Fill campaign groups select
+    const gpSel=$('cp-groups');
+    if(gpSel) gpSel.innerHTML=items.map(g=>`<option value="${g.id}">${esc(g.name)} (${g.contact_count})</option>`).join('');
+  } catch(e){toast(e.message,'error');}
+}
+
+async function createGroup() {
+  const name=v('grp-name');
+  if(!name){toast('Group name required','error');return;}
+  try { await apij('POST','/api/contacts/groups/',{name}); toast('Group created!'); $('grp-name').value=''; tog('fp-group'); loadGroups(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function deleteGroup(id) {
+  if(!confirm('Delete this group?'))return;
+  try { await api('DELETE',`/api/contacts/groups/${id}/`); toast('Group deleted'); loadGroups(); }
+  catch(e){toast(e.message,'error');}
+}
+
+function openAddContacts(gid) {
+  $('addgrp-id').value=gid;
+  fillContactSelects();
+  om('m-addgrp');
+}
+
+async function addContactsToGroup() {
+  const gid=$('addgrp-id').value;
+  const ids=Array.from($('addgrp-sel').selectedOptions).map(o=>parseInt(o.value));
+  if(!ids.length){toast('Select at least one contact','error');return;}
+  try {
+    await apij('POST',`/api/contacts/groups/${gid}/add_contacts/`,{contact_ids:ids});
+    toast(`Added ${ids.length} contact(s)`); cm('m-addgrp'); loadGroups();
+  } catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATES
+// ═══════════════════════════════════════════════════════
+async function loadTemplates() {
+  const el=$('templates-list');
+  el.innerHTML='<div class="empty"><div class="spin"></div></div>';
+  try {
+    const items=list(await apij('GET','/api/messaging/templates/'));
+    if(!items.length){el.innerHTML='<div class="empty"><div class="ei">📝</div><p>No templates yet.</p></div>';return;}
+    el.innerHTML=items.map(t=>`
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+          <strong style="font-size:14px">${esc(t.name)}</strong>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-info btn-xs" onclick="openPreview(${t.id})">Preview</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteTemplate(${t.id})">🗑</button>
+          </div>
+        </div>
+        <div style="font-size:13px;color:#555;background:#f8f9fa;padding:10px;border-radius:6px;white-space:pre-wrap">${esc(t.body)}</div>
+        <div style="font-size:11px;color:#bbb;margin-top:6px">${fmtDate(t.created_at)}</div>
+      </div>`).join('');
+    const sel=$('cp-template');
+    if(sel) sel.innerHTML='<option value="">— No template, use custom message —</option>'+items.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  } catch(e){toast(e.message,'error');}
+}
+
+async function createTemplate() {
+  const name=v('tpl-name'),body=$('tpl-body').value.trim();
+  if(!name||!body){toast('Name and body required','error');return;}
+  try {
+    await apij('POST','/api/messaging/templates/',{name,body});
+    toast('Template saved!'); $('tpl-name').value=''; $('tpl-body').value=''; tog('fp-template'); loadTemplates();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function deleteTemplate(id) {
+  if(!confirm('Delete this template?'))return;
+  try { await api('DELETE',`/api/messaging/templates/${id}/`); toast('Deleted'); loadTemplates(); }
+  catch(e){toast(e.message,'error');}
+}
+
+function openPreview(id) { $('prev-id').value=id; $('prev-result').style.display='none'; om('m-preview'); }
+
+async function runPreview() {
+  const id=$('prev-id').value,name=v('prev-name'),phone=v('prev-phone');
+  try {
+    const d=await apij('POST',`/api/messaging/templates/${id}/preview/`,{context:{name,phone_number:phone}});
+    const el=$('prev-result'); el.textContent=d.rendered; el.style.display='block';
+  } catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// CAMPAIGNS
+// ═══════════════════════════════════════════════════════
+function openCampaignForm() {
+  fillProfileSelects();
+  loadTemplates();
+  loadGroups();
+  fillContactSelects();
+  tog('fp-campaign');
+}
+
+async function loadCampaigns() {
+  const el=$('campaigns-list');
+  el.innerHTML='<div class="empty"><div class="spin"></div></div>';
+  try {
+    const items=list(await apij('GET','/api/messaging/campaigns/'));
+    console.log('[Dashboard] Campaign payload', items);
+    if(!items.length){el.innerHTML='<div class="empty"><div class="ei">📣</div><p>No campaigns yet.</p></div>';return;}
+    el.innerHTML=items.map(c=>{
+      const displayStatus = c.status==='running' && !(c.pending_count||0) && !(c.sent_count||0) && !(c.failed_count||0) ? 'idle' : c.status;
+      return `
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">
+          <div>
+            <span style="font-size:15px;font-weight:600">${esc(c.name)}</span>
+            <span style="margin-left:8px">${bdg(displayStatus)}</span>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${['draft','scheduled','paused','failed','running'].includes(c.status) && !(c.status==='running' && (c.pending_count||0)>0)?`
+              <button class="btn btn-primary btn-sm" onclick="runRealtime(${c.id})">⚡ Real-time</button>
+              <button class="btn btn-info btn-sm" onclick="runAsync(${c.id})">🔄 Celery</button>`:''}
+            ${c.status==='running'?`<button class="btn btn-warning btn-sm" onclick="pauseCampaign(${c.id})">⏸ Pause</button>`:''}
+            <button class="btn btn-secondary btn-sm" onclick="viewLogs(${c.id},'${esc(c.name)}')">📋 Logs</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCampaign(${c.id})">🗑</button>
+          </div>
+        </div>
+        <div class="stats-strip">
+          <span>📤 Sent: <strong style="color:#25d366">${c.sent_count||0}</strong></span>
+          <span>❌ Failed: <strong style="color:#ff4757">${c.failed_count||0}</strong></span>
+          <span>⏳ Active: <strong style="color:#b86e00">${c.pending_count||0}</strong></span>
+          <span>📊 Total: <strong>${c.total_messages||c.target_count||0}</strong></span>
+          <span>👥 Targets: <strong>${c.target_count||0}</strong></span>
+          <span>🕐 ${c.min_delay_seconds}–${c.max_delay_seconds}s</span>
+          <span>🌏 ${c.campaign_timezone}</span>
+          ${c.auto_send?`<span class="auto-pill">🤖 Auto-Send ON</span>`:''}
+          ${c.started_at?`<span>▶ ${fmtDate(c.started_at)}</span>`:''}
+        </div>
+      </div>`}).join('');
+  } catch(e){console.error('[Dashboard] loadCampaigns failed', e); toast(e.message,'error');}
+}
+
+async function createCampaign() {
+  const name=v('cp-name'),profile=v('cp-profile'),tpl=v('cp-template'),custom=$('cp-custom').value.trim();
+  const minD=parseInt(v('cp-min')),maxD=parseInt(v('cp-max')),tz=v('cp-tz');
+  const windows=$('cp-windows').checked;
+  const contacts=Array.from($('cp-contacts').selectedOptions).map(o=>parseInt(o.value));
+  const groups=Array.from($('cp-groups').selectedOptions).map(o=>parseInt(o.value));
+
+  if(!name){toast('Campaign name required','error');return;}
+  if(!profile){toast('Select a profile','error');return;}
+  if(!tpl&&!custom){toast('Provide a template or custom message','error');return;}
+  if(!contacts.length&&!groups.length){toast('Select at least one contact or group','error');return;}
+
+  const autoSend=$('cp-auto').checked;
+  const body={name,profile:parseInt(profile),custom_message:custom,min_delay_seconds:minD,max_delay_seconds:maxD,campaign_timezone:tz,respect_time_windows:windows,auto_send:autoSend,target_contacts:contacts,target_groups:groups};
+  if(tpl)body.template=parseInt(tpl);
+
+  try {
+    await apij('POST','/api/messaging/campaigns/',body);
+    toast('Campaign created!'); tog('fp-campaign'); loadCampaigns();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function runRealtime(id) {
+  if(!confirm('Send to all contacts via Chrome Extension? Make sure the extension shows green ● Connected.'))return;
+  toast('Dispatching to extension…','info');
+  try {
+    const d=await apij('POST',`/api/messaging/campaigns/${id}/run_realtime/`);
+    toast(`${d.detail}`,'success');
+    loadCampaigns();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function runSync(id) {
+  if(!confirm('Run via Selenium (browser must be launched first via Launch button).'))return;
+  toast('Campaign running…','info');
+  try {
+    const d=await apij('POST',`/api/messaging/campaigns/${id}/start_sync/`);
+    toast(`Done! ✓ Sent: ${d.sent} | ✗ Failed: ${d.failed} | Total: ${d.total}`);
+    loadCampaigns();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function runAsync(id) {
+  toast('Dispatched to Celery worker ⚡','info');
+  try {
+    const d=await apij('POST',`/api/messaging/campaigns/${id}/start/`);
+    toast(`Task queued. ID: ${d.task_id}`); loadCampaigns();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function pauseCampaign(id) {
+  try { await apij('POST',`/api/messaging/campaigns/${id}/pause/`); toast('Campaign paused'); loadCampaigns(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function deleteCampaign(id) {
+  if(!confirm('Delete this campaign?'))return;
+  try { await api('DELETE',`/api/messaging/campaigns/${id}/`); toast('Deleted'); loadCampaigns(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function viewLogs(id,name) {
+  $('m-logs-title').textContent=`Logs — ${name}`;
+  $('m-logs-tb').innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px"><div class="spin"></div></td></tr>';
+  om('m-logs');
+  try {
+    const items=list(await apij('GET',`/api/messaging/campaigns/${id}/logs/`));
+    console.log('[Dashboard] Campaign logs payload', { id, items });
+    if(!items.length){$('m-logs-tb').innerHTML='<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px">No logs yet.</td></tr>';return;}
+    $('m-logs-tb').innerHTML=items.map(l=>`
+      <tr class="log-${l.status}">
+        <td><code style="font-size:11px">${esc(logTarget(l))}</code><br><span style="font-size:10px;color:#aaa">${esc(l.contact_name||l.whatsapp_jid||'')}</span></td>
+        <td style="font-size:12px;max-width:280px">${esc(l.message_body)}</td>
+        <td>${bdg(l.status)}</td>
+        <td style="font-size:11px;color:#c0392b">${l.error_message||'—'}</td>
+        <td style="font-size:11px">${fmtDate(l.sent_at)}</td>
+      </tr>`).join('');
+  } catch(e){console.error('[Dashboard] viewLogs failed', { id, error: e }); toast(e.message,'error');}
+}
+
+async function loadAllLogs() {
+  const tb=$('all-logs-tb');
+  tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px"><div class="spin"></div></td></tr>';
+  try {
+    const items=list(await apij('GET','/api/messaging/logs/'));
+    console.log('[Dashboard] All logs payload', items);
+    if(!items.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#bbb;padding:28px">No logs yet.</td></tr>';return;}
+    tb.innerHTML=items.map(l=>`
+      <tr class="log-${l.status}">
+        <td><code style="font-size:11px">${esc(logTarget(l))}</code><br><span style="font-size:10px;color:#aaa">${esc(l.contact_name||l.whatsapp_jid||'')}</span></td>
+        <td style="font-size:12px;max-width:300px">${esc(l.message_body)}</td>
+        <td>${bdg(l.status)}</td>
+        <td style="font-size:11px">${fmtDate(l.sent_at||l.created_at)}</td>
+      </tr>`).join('');
+  } catch(e){console.error('[Dashboard] loadAllLogs failed', e); toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════
+// DIRECT SEND
+// ═══════════════════════════════════════════════════════
+async function sendDirect() {
+  const profile=parseInt(v('dm-profile')),phone=v('dm-phone'),message=$('dm-msg').value.trim();
+  const res=$('dm-result');
+  if(!profile){toast('Select a profile','error');return;}
+  if(!phone||!message){toast('Phone and message required','error');return;}
+  res.innerHTML='<div class="spin"></div>';
+  try {
+    const d=await apij('POST','/api/messaging/send/',{profile_id:profile,phone_number:phone,message});
+    res.innerHTML=d.success
+      ?`<div class="alert alert-success">✓ Message sent! Log ID: ${d.log_id}</div>`
+      :`<div class="alert alert-error">✗ Failed: ${d.error}</div>`;
+  } catch(e){res.innerHTML=`<div class="alert alert-error">${e.message}</div>`;}
+}
+
+// ═══════════════════════════════════════════════════════
+// INBOX
+// ═══════════════════════════════════════════════════════
+async function loadInbox() {
+  const tb=$('inbox-tb');
+  tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px"><div class="spin"></div></td></tr>';
+  try {
+    const items=list(await apij('GET','/api/sessions/inbox/?is_processed=false'));
+    updateBadge(items.length);
+    if(!items.length){tb.innerHTML='<tr><td colspan="6" class="empty" style="padding:32px">No unread messages.</td></tr>';return;}
+    tb.innerHTML=items.map(m=>`
+      <tr>
+        <td><strong>${esc(m.profile_name)}</strong></td>
+        <td>${esc(m.sender_name||m.sender_phone||'?')}</td>
+        <td style="font-size:13px">${esc(m.message_preview)}</td>
+        <td><span style="background:#ff4757;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700">${m.unread_count}</span></td>
+        <td style="font-size:11px;color:#aaa">${fmtDate(m.received_at)}</td>
+        <td><button class="btn btn-secondary btn-xs" onclick="markRead(${m.id},this)">✓ Done</button></td>
+      </tr>`).join('');
+  } catch(e){toast(e.message,'error');}
+}
+
+async function markRead(id,btn) {
+  btn.disabled=true;
+  try { await apij('POST',`/api/sessions/inbox/${id}/mark_processed/`); toast('Marked as read'); loadInbox(); }
+  catch(e){toast(e.message,'error');btn.disabled=false;}
+}
+
+async function markAllRead() {
+  try { const d=await apij('POST','/api/sessions/inbox/mark_all_processed/'); toast(d.detail); loadInbox(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function refreshInboxBadge() {
+  try {
+    const items=list(await apij('GET','/api/sessions/inbox/?is_processed=false'));
+    updateBadge(items.length);
+  } catch{}
+}
+
+function updateBadge(n) {
+  const b=$('inbox-badge');
+  if(n>0){b.textContent=n;b.style.display='inline-block';}
+  else{b.style.display='none';}
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS PAGE
+// ═══════════════════════════════════════════════════════
+async function loadSettings() {
+  try {
+    const d = await apij('GET', '/api/system/config/');
+    const statusEl = $('settings-status-body');
+    statusEl.innerHTML = `
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <tr><td style="padding:6px 0;width:180px;color:#888">Claude AI</td>
+            <td>${d.claude_ai
+              ? '<span class="badge badge-sent">✓ Configured — AI active</span>'
+              : '<span class="badge badge-inactive">Not set — using plain templates</span>'}</td></tr>
+        <tr><td style="padding:6px 0;color:#888">WebSocket</td>
+            <td><span class="badge badge-sent">✓ Server running</span></td></tr>
+        <tr><td style="padding:6px 0;color:#888">Webhook URL</td>
+            <td><code style="font-size:11px;word-break:break-all">${d.webhook_url}</code>
+                <button class="btn btn-secondary btn-xs" style="margin-left:6px"
+                  onclick="navigator.clipboard.writeText('${d.webhook_url}');toast('Copied!')">Copy</button></td></tr>
+      </table>`;
+    $('webhook-url-block').innerHTML =
+      `POST <strong>${d.webhook_url}</strong><br>Header: <strong>X-Webhook-Secret: ${d.webhook_secret}</strong>`;
+  } catch(e) {
+    $('settings-status-body').textContent = 'Could not load config: ' + e.message;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+  if(e.key==='Enter'&&$('login-screen').style.display!=='none') doLogin();
+});
+
+// ═══════════════════════════════════════════════════════
+// INIT — auto-login if token exists
+// ═══════════════════════════════════════════════════════
+window.onload = () => {
+  if(_token) { mountApp(localStorage.getItem('wa_user')||'User'); }
+};
+</script>
+</body>
+</html>

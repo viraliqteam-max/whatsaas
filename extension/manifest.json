@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "WhatsApp Automation Agent",
+  "version": "1.0.2",
+  "description": "Real-time WhatsApp automation bridge — connects this browser profile to the Django backend.",
+  "permissions": ["tabs", "storage", "cookies", "scripting", "notifications", "alarms", "offscreen"],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "http://192.168.1.13:8000/*",
+    "ws://localhost:8000/*",
+    "ws://127.0.0.1:8000/*",
+    "ws://192.168.1.13:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:8000/ext-init/*",
+        "http://127.0.0.1:8000/ext-init/*",
+        "http://192.168.1.13:8000/ext-init/*"
+      ],
+      "js": ["init.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WA Automation Agent"
+  }
+}

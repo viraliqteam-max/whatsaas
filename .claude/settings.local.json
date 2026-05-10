@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pip show anthropic 2>$null)",
+      "PowerShell(pip show redis 2>$null)",
+      "PowerShell(pip show celery 2>$null)"
+    ]
+  }
+}

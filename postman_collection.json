@@ -1,0 +1,402 @@
+{
+  "info": {
+    "name": "WhatsApp Automation API",
+    "description": "Complete API for GoLogin profile management and WhatsApp Web automation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://127.0.0.1:8000" },
+    { "key": "TOKEN", "value": "" },
+    { "key": "PROFILE_ID", "value": "" },
+    { "key": "SESSION_ID", "value": "" },
+    { "key": "CAMPAIGN_ID", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Obtain JWT Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('TOKEN', json.access);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/auth/token/"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"<your_refresh_token>\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/auth/token/refresh/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GoLogin Profiles",
+      "item": [
+        {
+          "name": "List Profiles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/"
+          }
+        },
+        {
+          "name": "Create Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('PROFILE_ID', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My WhatsApp Profile 1\",\n  \"os_type\": \"win\",\n  \"notes\": \"Primary profile for campaign A\",\n  \"sync_with_gologin\": true\n}"
+            },
+            "url": "{{BASE_URL}}/api/profiles/"
+          }
+        },
+        {
+          "name": "Retrieve Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/{{PROFILE_ID}}/"
+          }
+        },
+        {
+          "name": "Launch Profile (start browser)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/{{PROFILE_ID}}/launch/"
+          }
+        },
+        {
+          "name": "Stop Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/{{PROFILE_ID}}/stop/"
+          }
+        },
+        {
+          "name": "Driver Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/{{PROFILE_ID}}/driver_status/"
+          }
+        },
+        {
+          "name": "List Active Profiles (driver pool)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/active/"
+          }
+        },
+        {
+          "name": "Fetch GoLogin Remote List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/gologin_list/"
+          }
+        },
+        {
+          "name": "Delete Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/profiles/{{PROFILE_ID}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "WhatsApp Sessions",
+      "item": [
+        {
+          "name": "Create Session for Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('SESSION_ID', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {{PROFILE_ID}},\n  \"phone_number\": \"12025550123\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/sessions/"
+          }
+        },
+        {
+          "name": "Check WhatsApp Status (get QR)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/sessions/{{SESSION_ID}}/check_status/"
+          }
+        },
+        {
+          "name": "Take Screenshot",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/sessions/{{SESSION_ID}}/screenshot/"
+          }
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/sessions/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Create Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"phone_number\": \"12025550123\",\n  \"email\": \"john@example.com\",\n  \"tags\": [\"lead\", \"vip\"]\n}"
+            },
+            "url": "{{BASE_URL}}/api/contacts/"
+          }
+        },
+        {
+          "name": "List Contacts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BASE_URL}}/api/contacts/?search=John",
+              "query": [{ "key": "search", "value": "John" }]
+            }
+          }
+        },
+        {
+          "name": "Bulk Import Contacts",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contacts\": [\n    {\"name\": \"Alice\", \"phone_number\": \"14155550100\"},\n    {\"name\": \"Bob\", \"phone_number\": \"14155550101\"},\n    {\"name\": \"Carol\", \"phone_number\": \"14155550102\"}\n  ]\n}"
+            },
+            "url": "{{BASE_URL}}/api/contacts/bulk_import/"
+          }
+        },
+        {
+          "name": "Create Contact Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Campaign A Targets\",\n  \"contact_ids\": [1, 2, 3]\n}"
+            },
+            "url": "{{BASE_URL}}/api/contacts/groups/"
+          }
+        },
+        {
+          "name": "List Contact Groups",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/contacts/groups/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messaging",
+      "item": [
+        {
+          "name": "Send Direct Message (instant)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_id\": {{PROFILE_ID}},\n  \"phone_number\": \"12025550123\",\n  \"message\": \"Hello from the API!\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/messaging/send/"
+          }
+        },
+        {
+          "name": "Create Message Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Welcome Template\",\n  \"body\": \"Hi {name}, welcome to our service! Your number {phone_number} is now registered.\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/messaging/templates/"
+          }
+        },
+        {
+          "name": "Preview Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"context\": {\"name\": \"Alice\", \"phone_number\": \"14155550100\"}\n}"
+            },
+            "url": "{{BASE_URL}}/api/messaging/templates/1/preview/"
+          }
+        },
+        {
+          "name": "Create Campaign",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('CAMPAIGN_ID', json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My First Campaign\",\n  \"profile\": {{PROFILE_ID}},\n  \"custom_message\": \"Hey {name}! Special offer just for you.\",\n  \"target_contacts\": [1, 2, 3],\n  \"target_groups\": [],\n  \"delay_seconds\": 10\n}"
+            },
+            "url": "{{BASE_URL}}/api/messaging/campaigns/"
+          }
+        },
+        {
+          "name": "Start Campaign (async Celery)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/messaging/campaigns/{{CAMPAIGN_ID}}/start/"
+          }
+        },
+        {
+          "name": "Start Campaign (sync — for Postman testing)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/messaging/campaigns/{{CAMPAIGN_ID}}/start_sync/"
+          }
+        },
+        {
+          "name": "Campaign Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/messaging/campaigns/{{CAMPAIGN_ID}}/stats/"
+          }
+        },
+        {
+          "name": "Campaign Message Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/messaging/campaigns/{{CAMPAIGN_ID}}/logs/"
+          }
+        },
+        {
+          "name": "List All Message Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BASE_URL}}/api/messaging/logs/?status=sent",
+              "query": [{ "key": "status", "value": "sent" }]
+            }
+          }
+        },
+        {
+          "name": "List All Campaigns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": "{{BASE_URL}}/api/messaging/campaigns/"
+          }
+        }
+      ]
+    }
+  ]
+}

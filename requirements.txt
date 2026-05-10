@@ -1,0 +1,28 @@
+Django>=5.2
+djangorestframework>=3.15.2
+djangorestframework-simplejwt>=5.4.0
+django-cors-headers>=4.3.1
+psycopg[binary]>=3.1.0
+python-decouple==3.8
+celery>=5.4.0
+redis>=5.0.0
+django-celery-beat>=2.7.0
+django-celery-results>=2.5.1
+selenium>=4.20.0
+webdriver-manager>=4.0.1
+requests>=2.31.0
+python-dotenv>=1.0.1
+drf-spectacular>=0.28.0
+django-filter>=24.3
+gunicorn>=21.2.0
+whitenoise>=6.7.0
+# Real-time WebSocket layer
+channels>=4.0.0
+channels-redis>=4.0.0
+daphne>=4.0.0
+# AI message generation (optional)
+anthropic>=0.25.0
+# GoLogin Python SDK — launches browser profiles directly (replaces local REST API)
+gologin>=1.1.0
+# Playwright — CDP-based WhatsApp Web inbox watcher (replaces Selenium poll_inbox)
+playwright>=1.44.0

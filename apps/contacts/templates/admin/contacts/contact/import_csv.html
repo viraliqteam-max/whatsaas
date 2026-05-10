@@ -1,0 +1,60 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Import Contacts from CSV{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;">
+  <h1>Import Contacts from CSV</h1>
+
+  {% if messages %}
+    {% for message in messages %}
+      <p class="{% if message.tags %}{{ message.tags }}{% endif %}"
+         style="padding:10px;border-radius:4px;
+                background:{% if 'error' in message.tags %}#f8d7da{% else %}#d4edda{% endif %};
+                color:{% if 'error' in message.tags %}#721c24{% else %}#155724{% endif %};">
+        {{ message }}
+      </p>
+    {% endfor %}
+  {% endif %}
+
+  <div style="background:#fff;padding:20px;border-radius:6px;margin:16px 0;border:1px solid #eee;">
+    <h3 style="margin-top:0;">CSV Format</h3>
+    <p>Your file must have a header row with these columns:</p>
+    <pre style="background:#f5f5f5;padding:10px;border-radius:4px;font-size:13px;">name,phone_number,email,tags,notes</pre>
+    <p style="font-size:13px;color:#555;">
+      • <strong>phone_number</strong> — international format without + (e.g. <code>919876543210</code>)<br>
+      • <strong>tags</strong> — comma-separated inside the cell (e.g. <code>vip,lead</code>)<br>
+      • <strong>email, tags, notes</strong> — optional, can be empty
+    </p>
+    <p style="font-size:13px;">
+      Example row: <code>Rahul Sharma,919876543210,rahul@example.com,"vip,lead",New customer</code>
+    </p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data"
+        style="background:#fff;padding:20px;border-radius:6px;border:1px solid #eee;">
+    {% csrf_token %}
+    <p>
+      <label for="csv_file" style="font-weight:600;">Select CSV file:</label><br>
+      <input type="file" id="csv_file" name="csv_file" accept=".csv" required
+             style="margin-top:8px;">
+    </p>
+    <p style="margin-top:16px;">
+      <button type="submit"
+              style="padding:10px 24px;background:#25d366;color:#fff;border:none;
+                     border-radius:6px;font-size:14px;cursor:pointer;font-weight:600;">
+        Import Contacts
+      </button>
+      &nbsp;
+      <a href="../" style="color:#666;font-size:13px;">← Back to list</a>
+    </p>
+  </form>
+
+  <p style="margin-top:16px;font-size:12px;color:#888;">
+    Duplicate phone numbers (same owner) will be skipped automatically.
+    After import, contacts assigned to <strong>auto_send</strong> campaigns
+    will be messaged immediately via the Chrome extension.
+  </p>
+</div>
+{% endblock %}
