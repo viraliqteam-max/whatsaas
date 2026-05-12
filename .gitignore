@@ -10,3 +10,13 @@ media/
 # Logs
 *.log
 logs/
+daphne_err.log
+daphne.combined.log
+daphne.log
+daphne.stderr.log
+daphne.stdout.log
+daphne_err.log
+daphne.log
+dump.rdb
+
+
