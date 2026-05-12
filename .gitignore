@@ -7,3 +7,6 @@ __pycache__/
 staticfiles/
 media/
 .DS_Store
+# Logs
+*.log
+logs/
