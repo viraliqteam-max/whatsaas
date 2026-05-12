@@ -66978,3 +66978,531 @@ INFO 2026-05-12 08:08:02,633 consumers [WS-Receive] profile=69ff136e10712a687a84
 INFO 2026-05-12 08:08:02,636 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
 INFO 2026-05-12 08:08:02,688 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
 INFO 2026-05-12 08:08:02,688 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:06,676 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:06,680 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:06,725 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:06,726 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:06,727 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:06,729 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:06,779 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:06,779 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:07,637 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:07,641 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:07,685 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:07,686 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:11,667 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:11,671 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:11,716 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:11,717 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:11,718 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:11,720 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:11,774 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:11,775 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:12,634 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:12,636 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:12,699 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:12,700 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:16,671 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:16,675 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:16,731 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:16,732 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:16,733 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:16,736 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:16,902 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:16,903 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:17,637 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:17,641 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:17,702 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:17,703 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:21,678 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:21,682 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:21,731 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:21,732 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:21,740 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:21,743 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:21,792 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:21,793 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:22,633 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:22,637 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:22,682 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:22,682 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:26,672 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:26,676 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:26,837 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:26,837 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:26,839 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:26,843 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:26,911 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:26,911 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:27,639 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:27,642 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:27,685 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:27,685 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:31,679 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:31,683 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:31,726 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:31,726 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:31,727 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:31,730 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:31,776 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:31,777 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:32,645 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:32,649 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:32,693 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:32,693 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:36,671 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:36,675 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:36,718 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:36,719 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:36,720 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:36,722 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:36,765 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:36,765 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:37,638 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:37,643 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:37,686 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:37,686 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:41,676 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:41,678 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:41,724 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:41,724 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:41,725 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:41,728 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:41,782 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:41,783 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:42,642 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:42,646 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:42,694 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:42,694 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:45,730 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:08:45,732 consumers Agent debug profile 69ff136e7bd52b8361b353a4: sidebar_scan_complete {'reason': 'interval', 'rows': 40, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:08:45,733 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,734 consumers Agent debug profile 69ff136f10712a687a841634: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 84, 'count': 2, 'badge_els': 3, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:08:45,735 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:08:45,736 consumers Agent debug profile 69ff136e10712a687a8414ff: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 84, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:08:45,737 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:08:45,738 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,739 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,740 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': '+91 734 767 8079', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,741 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:08:45,741 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_open_attempt {'jid': '', 'sender': '+91 81080 83228', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,742 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:08:45,743 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:08:45,743 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,744 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 734 767 8079', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:08:45,745 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:08:45,745 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 81080 83228', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:08:45,746 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,747 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,747 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:08:45,748 consumers Agent debug profile 69ff136e10712a687a8414ff: sidebar_scan_complete {'reason': 'interval', 'rows': 84, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:08:45,748 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,749 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:08:45,749 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:08:45,750 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_open_attempt {'jid': '', 'sender': '+91 81080 83228', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,750 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,751 consumers Agent debug profile 69ff136f10712a687a841634: sidebar_scan_complete {'reason': 'interval', 'rows': 84, 'count': 2, 'badge_els': 3, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:08:45,752 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:08:45,752 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 81080 83228', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:08:45,753 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,753 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': '+91 734 767 8079', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,754 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,754 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 734 767 8079', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:08:45,756 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,756 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:08:45,758 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:08:45,758 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:08:46,668 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:46,671 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:46,722 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:46,723 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:46,731 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:46,735 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:46,788 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:46,789 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:47,633 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:47,635 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:47,679 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:47,679 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:51,666 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:51,669 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:51,717 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:51,717 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:51,719 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:51,721 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:51,778 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:51,778 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:52,636 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:52,639 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:52,684 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:52,685 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:56,675 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:08:56,678 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:08:56,730 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:08:56,731 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:56,732 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:08:56,736 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:08:56,791 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:08:56,791 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:08:57,637 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:08:57,646 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:08:57,691 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:08:57,691 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:01,673 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:01,676 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:01,722 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:01,722 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:01,724 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:01,726 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:01,773 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:01,774 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:02,642 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:02,645 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:02,702 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:02,703 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:06,665 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:06,668 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:06,711 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:06,711 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:06,713 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:06,715 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:06,760 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:06,761 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:07,633 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:07,638 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:07,681 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:07,682 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:11,673 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:11,677 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:11,724 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:11,725 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:11,733 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:11,736 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:11,792 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:11,793 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:12,641 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:12,643 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:12,688 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:12,688 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:16,668 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:16,672 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:16,717 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:16,718 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:16,719 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:16,721 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:16,764 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:16,764 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:17,635 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:17,639 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:17,683 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:17,683 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:21,676 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:21,679 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:21,726 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:21,726 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:21,728 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:21,731 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:21,778 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:21,779 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:22,633 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:22,636 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:22,681 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:22,681 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:26,667 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:26,671 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:26,823 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:26,823 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:26,824 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:26,827 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:26,872 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:26,872 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:27,638 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:27,643 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:27,687 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:27,688 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:31,666 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:31,670 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:31,713 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:31,713 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:31,714 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:31,717 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:31,759 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:31,760 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:32,638 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:32,642 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:32,689 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:32,690 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:36,679 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:36,682 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:36,726 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:36,727 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:36,734 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:36,736 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:36,785 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:36,786 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:37,645 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:37,649 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:37,693 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:37,693 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:41,678 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:41,681 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:41,723 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:41,724 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:41,726 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:41,728 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:41,777 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:41,777 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:42,636 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:42,638 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:42,682 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:42,683 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:45,733 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:09:45,734 consumers Agent debug profile 69ff136e7bd52b8361b353a4: sidebar_scan_complete {'reason': 'interval', 'rows': 40, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:09:45,737 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:09:45,738 consumers Agent debug profile 69ff136e10712a687a8414ff: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 84, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:09:45,739 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:09:45,739 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,741 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,742 consumers Agent debug profile 69ff136f10712a687a841634: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 84, 'count': 2, 'badge_els': 3, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:09:45,743 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:09:45,745 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_open_attempt {'jid': '', 'sender': '+91 81080 83228', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,746 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:09:45,748 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:09:45,750 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,751 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': '+91 734 767 8079', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,753 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:09:45,753 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 81080 83228', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:09:45,755 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:09:45,756 consumers Agent debug profile 69ff136e7bd52b8361b353a4: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 40, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:09:45,757 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,758 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 734 767 8079', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:09:45,759 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:09:45,761 consumers Agent debug profile 69ff136e10712a687a8414ff: sidebar_scan_complete {'reason': 'interval', 'rows': 84, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:09:45,762 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:09:45,763 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,765 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,766 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,768 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:09:45,769 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_open_attempt {'jid': '', 'sender': '+91 81080 83228', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,770 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:09:45,771 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:09:45,772 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,773 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:09:45,774 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:09:45,775 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 81080 83228', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:09:45,776 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,777 consumers Agent debug profile 69ff136f10712a687a841634: sidebar_scan_complete {'reason': 'interval', 'rows': 84, 'count': 2, 'badge_els': 3, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:09:45,779 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,780 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': '+91 734 767 8079', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,783 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,784 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 734 767 8079', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:09:45,786 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,787 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:09:45,789 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:09:45,790 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:09:46,679 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:46,683 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:46,730 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:46,731 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:46,732 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:46,735 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:46,883 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:46,883 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:47,644 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:47,648 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:47,693 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:47,694 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:51,680 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:51,683 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:51,738 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:51,738 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:51,740 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:51,743 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:51,799 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:51,800 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:52,639 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:52,643 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:52,688 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:52,688 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:56,669 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:09:56,673 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:09:56,735 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:09:56,736 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:56,746 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:09:56,749 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:09:56,815 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:09:56,817 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:09:57,645 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:09:57,647 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:09:57,704 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:09:57,704 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:01,665 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:01,669 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:01,713 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:01,714 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:01,715 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:01,717 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:01,768 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:01,768 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:02,644 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:02,648 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:02,693 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:02,694 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:06,664 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:06,668 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:06,711 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:06,712 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:06,713 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:06,715 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:06,759 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:06,760 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:07,644 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:07,648 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:07,691 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:07,692 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:11,673 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:11,678 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:11,729 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:11,730 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:11,731 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:11,733 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:11,782 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:11,783 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:12,632 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:12,636 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:12,680 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:12,680 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:16,673 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:16,677 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:16,721 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:16,722 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:16,723 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:16,726 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:16,777 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:16,778 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:17,638 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:17,641 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:17,685 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:17,686 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:21,674 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:21,676 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:21,721 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:21,721 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:21,729 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:21,732 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:21,785 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:21,786 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:22,639 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:22,643 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:22,709 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:22,709 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:26,667 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:26,671 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:26,714 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:26,714 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:26,715 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:26,717 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:26,760 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:26,761 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:27,633 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:27,637 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:27,679 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:27,680 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:31,675 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:31,681 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:31,774 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:31,774 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:31,776 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:31,780 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:31,837 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:31,837 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:32,634 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:32,639 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:32,692 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:32,693 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:36,681 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:36,686 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:36,745 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:36,746 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:36,747 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:36,750 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:36,811 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:36,812 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:37,638 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:37,643 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:37,690 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:37,690 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:41,679 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:41,683 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:41,735 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:41,735 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:41,745 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:41,748 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:41,805 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:41,806 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:42,637 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:42,640 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:42,684 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:42,684 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:45,731 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:10:45,732 consumers Agent debug profile 69ff136e7bd52b8361b353a4: sidebar_scan_complete {'reason': 'interval', 'rows': 40, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:10:45,733 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:10:45,734 consumers Agent debug profile 69ff136e10712a687a8414ff: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 84, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:10:45,735 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,736 consumers Agent debug profile 69ff136f10712a687a841634: sidebar_scan_complete {'reason': 'badge_retry', 'rows': 84, 'count': 2, 'badge_els': 3, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:10:45,737 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:10:45,738 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,739 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:10:45,739 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_open_attempt {'jid': '', 'sender': '+91 81080 83228', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,740 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,741 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': '+91 734 767 8079', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,742 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=agent_debug
+INFO 2026-05-12 08:10:45,743 consumers Agent debug profile 69ff136e7bd52b8361b353a4: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': 'Atharv Lifestyle'}
+INFO 2026-05-12 08:10:45,744 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:10:45,745 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 81080 83228', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:10:45,747 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,748 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 734 767 8079', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:10:45,751 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:10:45,752 consumers Agent debug profile 69ff136e10712a687a8414ff: sidebar_scan_complete {'reason': 'interval', 'rows': 84, 'count': 1, 'badge_els': 2, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:10:45,754 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,755 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,756 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:10:45,757 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_open_attempt {'jid': '', 'sender': '+91 81080 83228', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,760 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=agent_debug
+INFO 2026-05-12 08:10:45,761 consumers Agent debug profile 69ff136e10712a687a8414ff: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 81080 83228', 'active_chat': '+91 70996 61780'}
+INFO 2026-05-12 08:10:45,778 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,780 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:10:45,790 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,791 consumers Agent debug profile 69ff136f10712a687a841634: sidebar_scan_complete {'reason': 'interval', 'rows': 84, 'count': 2, 'badge_els': 3, 'url': 'https://web.whatsapp.com/', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:10:45,795 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,796 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': '+91 734 767 8079', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,800 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,801 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': '+91 734 767 8079', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:10:45,805 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,807 consumers Agent debug profile 69ff136f10712a687a841634: unread_open_attempt {'jid': '', 'sender': 'WhatsApp Business', 'source': 'badge_direct'}
+INFO 2026-05-12 08:10:45,811 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=agent_debug
+INFO 2026-05-12 08:10:45,813 consumers Agent debug profile 69ff136f10712a687a841634: unread_extract_empty {'reason': 'jid_missing', 'jid': '', 'sender': 'WhatsApp Business', 'active_chat': '+91 734 767 8079'}
+INFO 2026-05-12 08:10:46,665 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:46,669 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:46,717 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:46,717 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:46,718 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:46,721 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:46,769 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:46,769 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:47,631 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:47,636 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:47,685 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:47,686 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:51,675 consumers [WS-Receive] profile=69ff136e7bd52b8361b353a4 type=heartbeat
+INFO 2026-05-12 08:10:51,678 registry [WS-Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True
+INFO 2026-05-12 08:10:51,731 services [Heartbeat] profile_id=69ff136e7bd52b8361b353a4 whatsapp_ready=True active_chat=Atharv Lifestyle
+INFO 2026-05-12 08:10:51,731 consumers [WS-Heartbeat] received profile=69ff136e7bd52b8361b353a4 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:51,733 consumers [WS-Receive] profile=69ff136f10712a687a841634 type=heartbeat
+INFO 2026-05-12 08:10:51,736 registry [WS-Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True
+INFO 2026-05-12 08:10:51,789 services [Heartbeat] profile_id=69ff136f10712a687a841634 whatsapp_ready=True active_chat=+91 734 767 8079
+INFO 2026-05-12 08:10:51,789 consumers [WS-Heartbeat] received profile=69ff136f10712a687a841634 whatsapp_ready=True result=updated
+INFO 2026-05-12 08:10:52,641 consumers [WS-Receive] profile=69ff136e10712a687a8414ff type=heartbeat
+INFO 2026-05-12 08:10:52,645 registry [WS-Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True
+INFO 2026-05-12 08:10:52,712 services [Heartbeat] profile_id=69ff136e10712a687a8414ff whatsapp_ready=True active_chat=+91 70996 61780
+INFO 2026-05-12 08:10:52,713 consumers [WS-Heartbeat] received profile=69ff136e10712a687a8414ff whatsapp_ready=True result=updated
