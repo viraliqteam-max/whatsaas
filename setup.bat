@@ -28,6 +28,7 @@ echo.
 echo ============================================================
 echo  Setup complete!
 echo  Start the dev server:  python manage.py runserver
-echo  Start Celery worker:   celery -A config worker -l info
+echo  Start Celery worker:   powershell -ExecutionPolicy Bypass -File scripts\celery_default_worker.ps1
+echo  Incoming worker:       powershell -ExecutionPolicy Bypass -File scripts\celery_incoming_worker.ps1
 echo  API docs:              http://127.0.0.1:8000/api/docs/
 echo ============================================================

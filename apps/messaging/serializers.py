@@ -46,6 +46,7 @@ class CampaignSerializer(serializers.ModelSerializer):
             "template", "template_name", "custom_message",
             "target_contacts", "target_groups",
             "status", "auto_send",
+            "campaign_intent", "ai_mode",
             "min_delay_seconds", "max_delay_seconds",
             "campaign_timezone", "respect_time_windows", "allowed_time_windows",
             "scheduled_at", "started_at", "completed_at", "celery_task_id",
@@ -58,6 +59,11 @@ class CampaignSerializer(serializers.ModelSerializer):
             "id", "owner", "status", "started_at", "completed_at",
             "celery_task_id", "created_at", "updated_at",
         ]
+        extra_kwargs = {
+            # Both are auto-filled in perform_create — don't require them in the POST body.
+            "name": {"required": False, "allow_blank": True},
+            "profile": {"required": False, "allow_null": True},
+        }
 
     def get_total_messages(self, obj):
         try:
@@ -140,8 +146,11 @@ class CampaignSerializer(serializers.ModelSerializer):
             return 0
 
     def validate(self, data):
-        if not data.get("template") and not data.get("custom_message"):
-            raise serializers.ValidationError("Provide either a template or a custom_message.")
+        # In AI mode the message is generated per contact — no template/message required.
+        if not data.get("ai_mode", True) and not data.get("template") and not data.get("custom_message"):
+            raise serializers.ValidationError(
+                "Provide either a template or a custom_message (or enable AI mode)."
+            )
         return data
 
 

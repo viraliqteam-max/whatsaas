@@ -18,6 +18,7 @@ def get_or_create_state(conversation):
 
 def transition(state, lead, intent: str):
     old_stage = state.stage
+    old_question = state.last_question_key
 
     if state.human_active:
         state.stage = ConversationState.Stage.HUMAN_HANDOFF
@@ -36,8 +37,22 @@ def transition(state, lead, intent: str):
     else:
         state.stage = ConversationState.Stage.CTA
 
-    if state.stage != old_stage:
-        state.save(update_fields=["stage", "updated_at"])
+    question_key = next_question_key(state, lead)
+    if question_key and question_key != state.last_question_key:
+        state.last_question_key = question_key
+    missing = [
+        field for field in ("business_type", "company_name", "contact_name", "current_marketing_method", "main_problem")
+        if not getattr(lead, field)
+    ]
+    state.metadata = {
+        **(state.metadata or {}),
+        "missing_lead_fields": missing,
+        "qualification_score": lead.qualification_score,
+        "last_stage_before_transition": old_stage,
+    }
+
+    if state.stage != old_stage or state.last_question_key != old_question:
+        state.save(update_fields=["stage", "last_question_key", "metadata", "updated_at"])
     return state
 
 

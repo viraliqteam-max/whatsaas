@@ -65,6 +65,33 @@ def system_config(request):
     })
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def debug_remotes(request):
+    """GET /api/debug/remotes/ - live extension websocket registry state."""
+    from apps.realtime.registry import list_remotes
+
+    remotes = list_remotes()
+    return Response({
+        "connected_profiles": [row["profile_id"] for row in remotes if row.get("alive")],
+        "remotes": [
+            {
+                "profile_id": row.get("profile_id"),
+                "websocket_status": row.get("status"),
+                "alive": row.get("alive"),
+                "last_heartbeat": row.get("last_seen"),
+                "stale_reason": row.get("stale_reason"),
+                "whatsapp_ready": row.get("whatsapp_ready"),
+                "websocket_id": row.get("websocket_id"),
+                "browser_session": row.get("browser_session"),
+                "active_tasks": row.get("active_tasks", 0),
+                "queue_depth": row.get("queue_depth", 0),
+            }
+            for row in remotes
+        ],
+    })
+
+
 urlpatterns = [
     # Frontend — served directly from Django (no separate HTTP server needed)
     path("", frontend_view, name="frontend"),
@@ -81,6 +108,7 @@ urlpatterns = [
 
     # System config status
     path("api/system/config/", system_config, name="system-config"),
+    path("api/debug/remotes/", debug_remotes, name="debug-remotes"),
 
     # App routes
     path("api/profiles/", include("apps.profiles.urls")),

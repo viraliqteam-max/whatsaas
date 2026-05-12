@@ -20,19 +20,44 @@ if (navigator.locks) {
 }
 
 const KEEPALIVE_ALARM = 'ws-keepalive';
+// 5 s heartbeat → backend considers the profile stale after 15 s (3 missed beats)
+const WS_HEARTBEAT_MS = 5000;
+const WS_BACKOFF_MIN_MS = 1000;
+const WS_BACKOFF_MAX_MS = 30000;
 
 let ws           = null;
 let profileId    = null;
 let serverWsBase = null; // e.g. 'ws://192.168.1.13:8000/ws/agent/' — set from ext-init URL
 let reconnTimer  = null;
 let pingTimer    = null;
+let heartbeatTimer = null;
+let reconnectAttempts = 0;
+let lastWsUrl = '';
+const browserSession = crypto.randomUUID();
+let websocketId = crypto.randomUUID();
 const _incomingQueue = [];
 const _ackQueue = [];
+
+function wsBaseFromOrigin(origin) {
+  if (!origin) return null;
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    parsed.pathname = '/ws/agent/';
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString();
+  } catch (_) {
+    return null;
+  }
+}
 
 // ── Keepalive port from content script ───────────────────────────────────────
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'keepalive') return;
   port.onMessage.addListener(() => {});
+  if (profileId) connect(profileId);
   port.onDisconnect.addListener(() => {});
 });
 
@@ -43,6 +68,9 @@ chrome.runtime.onConnect.addListener((port) => {
 // to the right IP — even when GoLogin blocks 127.0.0.1/localhost.
 
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.status === 'complete' && (tab.url || '').startsWith('https://web.whatsapp.com') && profileId) {
+    connect(profileId);
+  }
   if (info.status !== 'loading') return;
   const url = tab.url || '';
   // Capture any server origin (works for 127.0.0.1, 192.168.x.x, localhost, etc.)
@@ -51,7 +79,7 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
 
   const serverOrigin = match[1]; // e.g. 'http://192.168.1.13:8000'
   const pid          = match[2];
-  const wsBase       = serverOrigin.replace(/^http/, 'ws') + '/ws/agent/';
+  const wsBase       = wsBaseFromOrigin(serverOrigin);
 
   console.log('[Agent] Auto-configuring profile ID from startUrl:', pid, '| server:', serverOrigin);
 
@@ -170,7 +198,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     return;
   }
 
-  if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CONNECTING) {
+  if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
     clearTimeout(reconnTimer);
     connect(profileId);
   }
@@ -188,15 +216,29 @@ function connect(pid) {
   // regular Chrome where loopback works fine.
   const wsBase = serverWsBase || 'ws://127.0.0.1:8000/ws/agent/';
   const url    = `${wsBase}${pid}/`;
-  console.log(`[Agent] Connecting to ${url}`);
+  lastWsUrl = url;
+  websocketId = crypto.randomUUID();
+  const status = reconnectAttempts > 0 ? 'reconnecting' : 'connecting';
+  chrome.storage.local.set({ ws_status: status });
+  console.log(`[WS-${status === 'reconnecting' ? 'Reconnect' : 'Connect'}] ${url}`);
   const socket = new WebSocket(url);
   ws = socket;
 
-  ws.onopen = () => {
-    console.log('[Agent] WebSocket connected');
-    ws.send(JSON.stringify({ type: 'register', profile_id: pid }));
+  ws.onopen = async () => {
+    console.log('[WS-Connected]', url);
+    reconnectAttempts = 0;
+    const health = await getProfileHealth();
+    ws.send(JSON.stringify({
+      type: 'register',
+      profile_id: pid,
+      websocket_id: websocketId,
+      browser_session: browserSession,
+      whatsapp_ready: !!health.whatsapp_ready,
+      timestamp: new Date().toISOString(),
+    }));
     chrome.storage.local.set({ ws_status: 'connected' });
     startPing();
+    startHeartbeat();
     flushAckQueue();
     flushIncomingQueue();
     // Immediately scan for any messages that arrived while disconnected
@@ -226,17 +268,26 @@ function connect(pid) {
 
   ws.onclose = () => {
     stopPing();
-    chrome.storage.local.set({ ws_status: 'disconnected' });
-    console.warn('[Agent] WS closed — reconnecting in 3 s');
+    stopHeartbeat();
+    console.warn('[WS-Disconnected] reconnecting soon');
     if (ws === socket) {
       ws = null;
-      reconnTimer = setTimeout(() => connect(pid), 3000);
+      scheduleReconnect(pid);
     }
   };
 
   ws.onerror = (e) => {
     console.error('[Agent] WS error', e);
   };
+}
+
+function scheduleReconnect(pid) {
+  reconnectAttempts += 1;
+  const delay = Math.min(WS_BACKOFF_MAX_MS, WS_BACKOFF_MIN_MS * Math.pow(2, reconnectAttempts - 1));
+  chrome.storage.local.set({ ws_status: 'reconnecting' });
+  console.warn('[WS-Reconnect] attempt=%d delay_ms=%d url=%s', reconnectAttempts, delay, lastWsUrl);
+  clearTimeout(reconnTimer);
+  reconnTimer = setTimeout(() => connect(pid), delay);
 }
 
 // ── Ping — keeps service worker alive via WebSocket event callbacks ───────────
@@ -267,6 +318,71 @@ function handleSendTask(task) {
               task.type, task.message_id || task.task_id, task.profile_id || profileId || '', task.jid || '');
   _sendQueue.push(task);
   if (!_queueBusy) _drainQueue();
+}
+
+function startHeartbeat() {
+  stopHeartbeat();
+  heartbeatTimer = setInterval(() => {
+    emitProfileHeartbeat();
+  }, WS_HEARTBEAT_MS);
+  emitProfileHeartbeat();
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+}
+
+async function emitProfileHeartbeat() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const health = await getProfileHealth();
+  const payload = {
+    type: 'heartbeat',
+    profile_id: profileId || '',
+    websocket_id: websocketId,
+    browser_session: browserSession,
+    whatsapp_ready: !!(health && health.whatsapp_ready),
+    extension_connected: true,
+    active_chat: (health && health.active_chat) || '',
+    url: (health && health.url) || '',
+    content_script_ready: !!(health && health.content_script_ready),
+    wa_state: (health && health.wa_state) || '',
+    timestamp: new Date().toISOString(),
+    error: (health && health.error) || '',
+  };
+  ws.send(JSON.stringify(payload));
+  const waState = payload.wa_state || '';
+  if (waState === 'ready') {
+    console.log('[SessionHealthy] profile_id=%s whatsapp_ready=%s', payload.profile_id, payload.whatsapp_ready);
+  } else if (waState === 'qr_required') {
+    console.log('[SessionDead] profile_id=%s reason=qr_required', payload.profile_id);
+  } else if (waState) {
+    console.log('[SessionRecovering] profile_id=%s wa_state=%s', payload.profile_id, waState);
+  }
+  console.log('[Heartbeat] emitted profile_id=%s whatsapp_ready=%s active_chat=%s',
+              payload.profile_id, payload.whatsapp_ready, payload.active_chat);
+}
+
+async function getProfileHealth() {
+  let health = {
+    whatsapp_ready: false,
+    active_chat: '',
+    url: '',
+    content_script_ready: false,
+    wa_state: 'no_whatsapp_tab',
+  };
+  try {
+    const tabs = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' });
+    if (tabs.length > 0) {
+      health = await chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_PROFILE_HEALTH' });
+      health.content_script_ready = true;
+    }
+  } catch (e) {
+    health = { ...health, error: e.message || String(e), wa_state: 'content_script_missing' };
+  }
+  return health || {};
 }
 
 async function _drainQueue() {
@@ -307,11 +423,38 @@ async function sendByJidInContent(jid, message, taskId) {
       });
       if (result && result.success) break;
     } catch (e) {
-      result = { success: false, error: e.message };
+      const isChannelClosed = e.message && (
+        e.message.includes('message channel closed') ||
+        e.message.includes('listener indicated an asynchronous response')
+      );
+      result = { success: false, status: isChannelClosed ? 'content_script_missing' : undefined, error: e.message };
     }
     if (attempt < 3) await sleep(2000);
   }
   return result;
+}
+
+// Wait until the active WhatsApp conversation in the given tab matches targetJid.
+// Polls every 600 ms via GET_ACTIVE_JID message to the content script.
+// Returns { matched: bool, activeJid: string }.
+async function _waitUntilChatMatchesJid(tabId, targetJid, timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 12000);
+  const normTarget = normalizeJid(targetJid);
+  while (Date.now() < deadline) {
+    try {
+      const result = await chrome.tabs.sendMessage(tabId, { type: 'GET_ACTIVE_JID' });
+      const activeJid = result && result.jid ? normalizeJid(result.jid) : '';
+      if (activeJid && activeJid === normTarget) return { matched: true, activeJid };
+    } catch (_) {}
+    await sleep(600);
+  }
+  try {
+    const result = await chrome.tabs.sendMessage(tabId, { type: 'GET_ACTIVE_JID' });
+    const activeJid = result && result.jid ? normalizeJid(result.jid) : '';
+    return { matched: activeJid === normTarget, activeJid };
+  } catch (_) {
+    return { matched: false, activeJid: '' };
+  }
 }
 
 function ackStatusFromResult(result, fallbackStatus = 'send_failed') {
@@ -319,16 +462,74 @@ function ackStatusFromResult(result, fallbackStatus = 'send_failed') {
   return (result && result.status) || fallbackStatus;
 }
 
+// ── Per-task dedup helpers (chrome.storage.local persistence) ─────────────────
+// Prevents the same MessageLog from being physically sent twice even when the
+// backend retries after an ACK timeout.  Keyed by task/message ID; expires 1 h.
+
+async function _isTaskAlreadySent(taskId) {
+  if (!taskId) return false;
+  try {
+    const stored = await chrome.storage.local.get('sent_task_ids');
+    const ids = stored.sent_task_ids || {};
+    const ts = ids[String(taskId)];
+    return !!(ts && Date.now() - ts < 3600000);
+  } catch (_) { return false; }
+}
+
+async function _markTaskSent(taskId) {
+  if (!taskId) return;
+  try {
+    const stored = await chrome.storage.local.get('sent_task_ids');
+    const ids = stored.sent_task_ids || {};
+    ids[String(taskId)] = Date.now();
+    // Prune oldest entries when the map grows large
+    const keys = Object.keys(ids);
+    if (keys.length > 500) {
+      keys.sort((a, b) => ids[a] - ids[b]).slice(0, 100).forEach(k => delete ids[k]);
+    }
+    await chrome.storage.local.set({ sent_task_ids: ids });
+  } catch (_) {}
+}
+
 async function _executeSend(task) {
   const jid = normalizeJid(task.jid || '');
   task.jid = jid;
   if (!jid) {
-    console.warn('[Extension] invalid_jid - message_id=%s profile_id=%s jid=%s',
-                 task.message_id || task.task_id, profileId || task.profile_id || '', task.jid || '');
+    console.warn('[ExtensionTask] failed reason=invalid_jid message_id=%s profile_id=%s',
+                 task.message_id || task.task_id, profileId || task.profile_id || '');
     emitAck(task, 'invalid_jid', 'Missing valid JID for send task');
     return;
   }
-  console.log('[Extension] task received - message_id=%s profile_id=%s jid=%s conversation=%s',
+
+  // Strict profile isolation: reject any task whose profile_id doesn't match
+  // this WebSocket's profile_id.  Prevents cross-profile dispatch.
+  const taskProfile = task.profile_id || '';
+  if (taskProfile && profileId && taskProfile !== profileId) {
+    console.error('[ExtensionTask] failed reason=profile_mismatch task_profile=%s ws_profile=%s jid=%s — dropped',
+                  taskProfile, profileId, jid);
+    emitAck(task, 'send_failed', `profile_mismatch:task=${taskProfile} ws=${profileId}`);
+    return;
+  }
+
+  // Per-task dedup: if this task ID was already sent (persisted in chrome.storage),
+  // emit a 'sent' ACK immediately so the backend can finalize the log without resending.
+  const _taskId = String(task.message_id || task.task_id || '');
+  if (_taskId && await _isTaskAlreadySent(_taskId)) {
+    console.log('[DuplicateSendPrevented] task_id=%s jid=%s — already sent in this session, emitting ACK',
+                _taskId, jid);
+    emitAck(task, 'sent', '');
+    return;
+  }
+
+  const health = await getProfileHealth();
+  if (!health.whatsapp_ready) {
+    const reason = health.wa_state || health.error || 'whatsapp_not_ready';
+    console.warn('[ChatValidationFailed] reason=%s message_id=%s profile_id=%s jid=%s',
+                 reason, task.message_id || task.task_id, profileId || task.profile_id || '', jid);
+    emitAck(task, health.wa_state === 'content_script_missing' ? 'content_script_missing' : 'whatsapp_not_ready', reason);
+    return;
+  }
+  console.log('[ExtensionTask] received message_id=%s profile_id=%s jid=%s conversation=%s',
               task.message_id || task.task_id, profileId || task.profile_id || '', jid, task.conversation_id || '');
   emitStage(task, 'extension_received');
 
@@ -360,6 +561,26 @@ async function _executeSend(task) {
     return;
   }
 
+  // Visual ACK reconciliation: if outgoing bubble already exists for this message,
+  // emit a sent ACK immediately — no need to re-send (handles missed WS ACKs).
+  {
+    const waTabs = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' });
+    if (waTabs.length > 0) {
+      try {
+        const bubbleCheck = await chrome.tabs.sendMessage(waTabs[0].id, {
+          type: 'GET_LATEST_OUTGOING', jid, message: task.message || '',
+        });
+        if (bubbleCheck && bubbleCheck.found) {
+          console.log('[ExistingBubbleDetected] message_id=%s jid=%s — outgoing bubble found, emitting sent ACK',
+                      task.message_id || task.task_id, jid);
+          await _markTaskSent(_taskId);
+          emitAck(task, 'sent', '');
+          return;
+        }
+      } catch (_) {}
+    }
+  }
+
   // JID-based direct-chat send: navigate phone deep link + click Send.
   let tabs = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' });
   let tabId;
@@ -378,6 +599,18 @@ async function _executeSend(task) {
   console.log('[OpenChat] attempt - message_id=%s profile_id=%s jid=%s phone=%s conversation=%s',
               task.message_id || task.task_id, profileId || task.profile_id || '', jid, cleanPhone, task.conversation_id || '');
   emitStage(task, 'opening_chat');
+
+  // Tell content.js to suppress incoming processing for this JID while we send.
+  // Prevents the opened chat from re-entering the auto-reply pipeline via the
+  // sidebar scanner or active-conversation poll for the next 5 minutes.
+  try {
+    await chrome.tabs.sendMessage(tabId, {
+      type: 'SUPPRESS_INCOMING_JID',
+      jid,
+      ttl: 300000,
+    });
+  } catch (_) {}
+
   try {
     await chrome.tabs.update(tabId, { url });
     await waitForTabLoad(tabId, 20000);
@@ -385,15 +618,23 @@ async function _executeSend(task) {
     emitAck(task, 'open_chat_failed', e.message || String(e));
     return;
   }
-  await sleep(8000);
-  console.log('[OpenChat] wait complete - message_id=%s jid=%s', task.message_id || task.task_id, jid);
+  // Validate opened_jid === target_jid before sending — never send blindly.
+  const { matched, activeJid } = await _waitUntilChatMatchesJid(tabId, jid, 12000);
+  console.log('[OpenChat] wait complete - message_id=%s jid=%s matched=%s active_jid=%s',
+              task.message_id || task.task_id, jid, matched, activeJid || 'none');
+  if (!matched) {
+    console.error('[RoutingMismatch] expected_jid=%s actual_jid=%s profile_id=%s task_id=%s — aborting send',
+                  jid, activeJid || 'none', profileId || '', task.message_id || task.task_id);
+    emitAck(task, 'routing_mismatch', `routing_mismatch:expected=${jid} actual=${activeJid || 'none'}`);
+    return;
+  }
 
   let result = { success: false, error: 'Content script did not respond after retries' };
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       emitStage(task, 'sending');
-      console.log('[SendMessage] attempt - message_id=%s profile_id=%s jid=%s attempt=%d',
-                  task.message_id || task.task_id, profileId || task.profile_id || '', jid, attempt);
+      console.log('[SendTyped] attempt=%d message_id=%s profile_id=%s jid=%s',
+                  attempt, task.message_id || task.task_id, profileId || task.profile_id || '', jid);
       result = await chrome.tabs.sendMessage(tabId, {
         type:    'CLICK_SEND',
         task_id: task.message_id || task.task_id,
@@ -401,17 +642,26 @@ async function _executeSend(task) {
         jid,
       });
       if (result && result.success) {
-        console.log('[SendMessage] verified success - message_id=%s jid=%s attempt=%d',
+        console.log('[SendTyped] verified message_id=%s jid=%s attempt=%d',
                     task.message_id || task.task_id, jid, attempt);
         break;
       }
     } catch (e) {
-      result = { success: false, error: e.message };
+      const isChannelClosed = e.message && (
+        e.message.includes('message channel closed') ||
+        e.message.includes('listener indicated an asynchronous response')
+      );
+      result = { success: false, status: isChannelClosed ? 'content_script_missing' : undefined, error: e.message };
     }
     if (attempt < 3) await sleep(3000);
   }
 
-  emitAck(task, ackStatusFromResult(result), result && result.error ? result.error : '');
+  const ackStatus = ackStatusFromResult(result);
+  console.log('[ACK] emitting message_id=%s jid=%s status=%s', task.message_id || task.task_id, jid, ackStatus);
+  if (ackStatus === 'sent') {
+    await _markTaskSent(_taskId);
+  }
+  emitAck(task, ackStatus, result && result.error ? result.error : '');
 }
 
 function emitStage(task, stage, error = '') {
@@ -431,8 +681,9 @@ function emitStage(task, stage, error = '') {
 }
 
 function emitAck(task, status, error = '') {
+  const ok = status === 'sent';
   const payload = {
-    type:       'message_sent_ack',
+    type:       ok ? 'message_sent_ack' : 'message_failed_ack',
     message_id: task.message_id || task.task_id,
     task_id:    task.task_id,
     jid:        task.jid || '',
@@ -475,8 +726,14 @@ async function reportWaStatus() {
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === 'SET_PROFILE_ID' && msg.profile_id) {
     const pid = msg.profile_id;
-    console.log('[Agent] Received profile_id from init.js content script:', pid);
-    chrome.storage.local.set({ profile_id: pid });
+    const nextWsBase = wsBaseFromOrigin(msg.server_origin);
+    console.log('[Agent] Received profile_id from init.js content script:', pid, '| server:', msg.server_origin || 'unknown');
+    const stored = { profile_id: pid, ws_status: 'connecting' };
+    if (nextWsBase) {
+      stored.server_ws_base = nextWsBase;
+      serverWsBase = nextWsBase;
+    }
+    chrome.storage.local.set(stored);
     profileId = pid;
     if (ws) { try { ws.close(); } catch (_) {} }
     connect(pid);

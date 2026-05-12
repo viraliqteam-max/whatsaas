@@ -10,9 +10,15 @@ class GoLoginProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id", "owner", "owner_username", "name", "gologin_profile_id",
             "os_type", "status", "notes", "business_context", "proxy", "extra_config",
+            "sync_status", "runtime_status", "extension_connected", "whatsapp_connected",
+            "browser_running", "health_status", "last_synced_at", "last_heartbeat_at",
             "created_at", "updated_at", "last_launched_at",
         ]
-        read_only_fields = ["id", "owner", "status", "created_at", "updated_at", "last_launched_at"]
+        read_only_fields = [
+            "id", "owner", "status", "sync_status", "runtime_status",
+            "extension_connected", "whatsapp_connected", "browser_running", "health_status",
+            "last_synced_at", "last_heartbeat_at", "created_at", "updated_at", "last_launched_at",
+        ]
 
 
 class GoLoginProfileCreateSerializer(serializers.ModelSerializer):

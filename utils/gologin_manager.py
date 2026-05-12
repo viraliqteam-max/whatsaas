@@ -304,10 +304,13 @@ def _build_local_driver() -> webdriver.Chrome:
     return webdriver.Chrome(service=service, options=chrome_options)
 
 
-def launch_profile(profile_id: str, use_remote: bool = True) -> webdriver.Chrome:
+def launch_profile(profile_id: str, use_remote: bool = True, on_disconnect=None) -> webdriver.Chrome:
     """
     Open the GoLogin profile and return a connected WebDriver.
     Reuses the existing driver if it is still alive (checked via driver.title).
+
+    on_disconnect: optional callable(profile_id) forwarded to wa_watcher so the
+    runtime lock is automatically released when the browser window closes.
     """
     with _pool_lock:
         if profile_id in _driver_pool:
@@ -319,7 +322,7 @@ def launch_profile(profile_id: str, use_remote: bool = True) -> webdriver.Chrome
                 _trigger_ext_init(driver, profile_id)
                 # Restart the watcher if it crashed since the last launch.
                 if entry.get("debug_addr"):
-                    wa_watcher.start(profile_id, entry["debug_addr"])
+                    wa_watcher.start(profile_id, entry["debug_addr"], on_disconnect=on_disconnect)
                 return driver
             except Exception:
                 logger.warning("Stale driver for profile %s — relaunching", profile_id)
@@ -330,14 +333,15 @@ def launch_profile(profile_id: str, use_remote: bool = True) -> webdriver.Chrome
         _wait_for_debug_port(debug_addr)        # returns as soon as port is open
         time.sleep(2)                           # let extension service worker finish init
         driver = _build_driver_from_ws(debug_addr)
+        pid = _get_chrome_pid(debug_addr)
         with _pool_lock:
-            _driver_pool[profile_id] = {"driver": driver, "debug_addr": debug_addr}
+            _driver_pool[profile_id] = {"driver": driver, "debug_addr": debug_addr, "pid": pid}
         _trigger_ext_init(driver, profile_id)
-        wa_watcher.start(profile_id, debug_addr)
+        wa_watcher.start(profile_id, debug_addr, on_disconnect=on_disconnect)
     else:
         driver = _build_local_driver()
         with _pool_lock:
-            _driver_pool[profile_id] = {"driver": driver, "debug_addr": None}
+            _driver_pool[profile_id] = {"driver": driver, "debug_addr": None, "pid": None}
 
     logger.info("Driver launched for profile %s", profile_id)
     return driver
@@ -386,6 +390,48 @@ def get_active_driver(profile_id: str) -> Optional[webdriver.Chrome]:
     return entry["driver"] if entry else None
 
 
+def get_debug_addr(profile_id: str) -> Optional[str]:
+    """Return the CDP debug address for an active profile, or None."""
+    with _pool_lock:
+        entry = _driver_pool.get(profile_id)
+    return entry["debug_addr"] if entry else None
+
+
+def get_browser_pid(profile_id: str) -> Optional[int]:
+    """Return the Chrome process PID for an active profile, or None."""
+    with _pool_lock:
+        entry = _driver_pool.get(profile_id)
+    if not entry:
+        return None
+    if entry.get("pid"):
+        return entry["pid"]
+    # Lazy PID resolution from debug_addr if not stored yet
+    debug_addr = entry.get("debug_addr")
+    if debug_addr:
+        pid = _get_chrome_pid(debug_addr)
+        if pid:
+            entry["pid"] = pid
+        return pid
+    return None
+
+
 def list_active_profiles() -> list[str]:
     with _pool_lock:
         return list(_driver_pool.keys())
+
+
+def _get_chrome_pid(debug_addr: str) -> Optional[int]:
+    """Find the Chrome process PID by matching its remote-debugging-port."""
+    try:
+        port = int(debug_addr.split(":")[-1])
+        import psutil
+        for proc in psutil.process_iter(["pid", "cmdline"]):
+            try:
+                cmdline = proc.info.get("cmdline") or []
+                if any(f"--remote-debugging-port={port}" in arg for arg in cmdline):
+                    return proc.info["pid"]
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+    except Exception as exc:
+        logger.debug("_get_chrome_pid failed for %s: %s", debug_addr, exc)
+    return None

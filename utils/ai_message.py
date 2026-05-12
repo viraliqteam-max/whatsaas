@@ -224,12 +224,88 @@ def _call_groq(prompt: str, max_tokens: int) -> str:
     return resp.json()["choices"][0]["message"]["content"].strip()
 
 
+def _call_groq_messages(messages: list, max_tokens: int) -> str:
+    key = getattr(settings, "GROQ_API_KEY", "").strip()
+    if not key:
+        return ""
+
+    import requests, urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    model = getattr(settings, "GROQ_MODEL", "llama-3.1-8b-instant").strip()
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": max_tokens,
+    }
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+    }
+    resp = requests.post(
+        _GROQ_URL,
+        json=payload,
+        headers=headers,
+        verify=False,
+        timeout=_AI_TIMEOUT,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"].strip()
+
+
 def _plain(template_body: str, contact_name: str, contact_phone: str) -> str:
     return (
         template_body
         .replace("{name}", contact_name)
         .replace("{phone_number}", contact_phone)
     )
+
+
+def generate_conversation_reply(system_prompt: str, history: list, user_text: str, max_tokens: int = 150) -> str:
+    """
+    Generate a contextual AI reply using full conversation history.
+
+    history: list of {"role": "user"/"assistant", "content": str}
+    Returns empty string if all LLMs are unavailable or fail — caller must fall back.
+    """
+    # Gemini: flatten everything to a single prompt (no native chat format in REST v1beta)
+    if getattr(settings, "GEMINI_API_KEY", "").strip() and _gemini_allowed():
+        try:
+            flat = system_prompt + "\n\n"
+            for msg in history:
+                label = "Customer" if msg["role"] == "user" else "You"
+                flat += f"{label}: {msg['content']}\n"
+            flat += f"Customer: {user_text}\nYou (reply naturally, under 40 words, one question max):"
+            return _call_gemini(flat)
+        except Exception as exc:
+            logger.warning("Gemini conversation reply failed: %s", _safe_error(exc))
+
+    # Groq / OpenAI: use native chat messages format
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in history:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": user_text})
+
+    if getattr(settings, "GROQ_API_KEY", "").strip():
+        try:
+            return _call_groq_messages(messages, max_tokens)
+        except Exception as exc:
+            logger.warning("Groq conversation reply failed: %s", _safe_error(exc))
+
+    client = _get_openai()
+    if client:
+        try:
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini",
+                max_tokens=max_tokens,
+                messages=messages,
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception as exc:
+            logger.warning("OpenAI conversation reply failed: %s", _safe_error(exc))
+
+    return ""
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -274,17 +350,142 @@ def generate_personalized_message(template_body: str, contact_name: str, contact
     return _plain(template_body, contact_name, contact_phone)
 
 
-def generate_followup(sender_name: str, business_context: str = "") -> str:
+def generate_outreach_message(
+    contact_name: str,
+    contact_phone: str,
+    intent: str = "outreach",
+    business_context: str = "",
+    hint: str = "",
+    tags: list | None = None,
+    notes: str = "",
+    language: str = "english",
+) -> str:
     """
-    Generate a polite follow-up for a contact who hasn't replied in 3+ hours.
+    Generate a unique, contextual outbound WhatsApp message for a campaign contact.
+
+    This is the AI-mode message generator — every contact gets a fresh,
+    personalized message that avoids robotic bulk-send patterns.
+
+    intent: outreach | sales | support | followup | reengagement | onboarding | reminder | warmup
+    hint: optional seed text from campaign custom_message to guide the AI
+    tags: contact tags e.g. ["vip", "lead", "cold"]
+    language: english | hinglish | hindi (auto-detected by caller)
+    """
+    display = _display_name(contact_name)
+    context_section = f"\nYour business: {business_context}" if business_context else ""
+    tag_section = f"\nContact tags: {', '.join(tags)}" if tags else ""
+    notes_section = f"\nContact notes: {notes[:200]}" if notes else ""
+    hint_section = f"\nMessage seed/hint: {hint[:300]}" if hint else ""
+
+    intent_instructions = {
+        "outreach": "Introduce yourself warmly. Mention what you do and invite curiosity. Don't hard-sell.",
+        "sales": "Highlight a key benefit or offer. Include a soft CTA. Keep it conversational.",
+        "support": "Ask if they need help. Be warm and approachable. Reference their context if available.",
+        "followup": "Follow up naturally. Reference that you reached out before. Keep it brief.",
+        "reengagement": "Re-engage a contact who went quiet. Be warm, not pushy. Give them a reason to reply.",
+        "onboarding": "Welcome them. Explain what they can expect next. Be friendly and reassuring.",
+        "reminder": "Send a gentle, friendly reminder. Keep it short. One clear ask.",
+        "warmup": "Just build rapport. No pitch. Be genuinely curious about them.",
+    }.get(intent, "Introduce yourself warmly and invite a response.")
+
+    language_instructions = {
+        "hinglish": "Write in natural Hinglish (mix of Hindi and English like Indians text each other). Example: 'Hi Rahul! Aapka kaam dekha, bahut interesting hai. Kya ek baar baat kar sakte hain?'",
+        "hindi": "Write in conversational Hindi using Devanagari script. Keep it warm and human.",
+        "punjabi": "Write in Punjabi (Gurmukhi script optional, or Romanized Punjabi). Keep it warm.",
+        "english": "Write in clear, conversational English. Natural and human.",
+    }.get(language, "Write in clear, conversational English.")
+
+    prompt = (
+        f"You are a WhatsApp business messaging specialist.{context_section}\n\n"
+        f"Write a single WhatsApp message for this contact:\n"
+        f"- Name: {contact_name}{tag_section}{notes_section}{hint_section}\n\n"
+        f"Message goal: {intent_instructions}\n"
+        f"Language style: {language_instructions}\n\n"
+        f"Rules:\n"
+        f"- Maximum 3 sentences. Under 60 words.\n"
+        f"- Sound like a real person, not an automated system.\n"
+        f"- No hashtags. No bullet points. No emojis unless very natural.\n"
+        f"- Address the contact as '{display}'.\n"
+        f"- Return ONLY the final message text, nothing else."
+    )
+
+    if getattr(settings, "GEMINI_API_KEY", "").strip() and _gemini_allowed():
+        try:
+            result = _call_gemini(prompt)
+            if result:
+                return result
+        except Exception as exc:
+            logger.warning("Gemini outreach generation failed: %s", _safe_error(exc))
+
+    if getattr(settings, "GROQ_API_KEY", "").strip():
+        try:
+            result = _call_groq(prompt, max_tokens=120)
+            if result:
+                return result
+        except Exception as exc:
+            logger.warning("Groq outreach generation failed: %s", _safe_error(exc))
+
+    client = _get_openai()
+    if client:
+        try:
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini", max_tokens=120,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            result = resp.choices[0].message.content.strip()
+            if result:
+                return result
+        except Exception as exc:
+            logger.warning("OpenAI outreach generation failed: %s", _safe_error(exc))
+
+    # Fallback: intelligent template composition (no AI key needed)
+    if hint:
+        return _plain(hint, contact_name, contact_phone)
+
+    intent_fallbacks = {
+        "outreach": f"Hi {display}! I wanted to reach out and introduce myself. Would love to connect and see how we can help you.",
+        "sales": f"Hi {display}! We have something that might be a great fit for you. Mind if I share a quick overview?",
+        "support": f"Hi {display}! Just checking in to see if you need any help or have any questions for us.",
+        "followup": f"Hi {display}! Following up on my earlier message. Happy to chat whenever it suits you.",
+        "reengagement": f"Hi {display}! It's been a while. Hope you're doing well — would love to reconnect when you have a moment.",
+        "onboarding": f"Hi {display}! Welcome! We're excited to have you. Let me know if you have any questions as you get started.",
+        "reminder": f"Hi {display}! Just a quick reminder — whenever you're ready, we're here to help.",
+        "warmup": f"Hi {display}! Hope you're having a great day. Would love to learn more about what you're working on.",
+    }
+    return intent_fallbacks.get(intent, f"Hi {display}! Reaching out to connect. Would love to chat!")
+
+
+def generate_followup(
+    sender_name: str,
+    business_context: str = "",
+    stage: str = "",
+    last_question: str = "",
+    last_user_message: str = "",
+) -> str:
+    """
+    Generate a contextual follow-up for a contact who hasn't replied in 3+ hours.
+
+    stage: conversation stage (e.g. "problem_discovery")
+    last_question: the last field/topic we asked about (e.g. "main_problem")
+    last_user_message: the contact's last known message text
     """
     context_section = f"\nYour business: {business_context}" if business_context else ""
     display = _display_name(sender_name) if sender_name else "there"
+
+    context_details = ""
+    if stage:
+        context_details += f"\nConversation stage: {stage.replace('_', ' ')}"
+    if last_question:
+        context_details += f"\nLast topic you asked about: {last_question.replace('_', ' ')}"
+    if last_user_message:
+        context_details += f"\nTheir last message: \"{last_user_message[:120]}\""
+
     prompt = (
         f"You are a friendly WhatsApp business assistant.{context_section}\n\n"
-        f'You sent a message to "{display}" earlier and haven\'t heard back.\n\n'
-        f"Write a short, polite follow-up in 1-2 sentences. "
-        f"Sound natural and human. No hashtags, no bullet points. Return ONLY the reply."
+        f'You messaged "{display}" earlier and haven\'t heard back.{context_details}\n\n'
+        f"Write a short follow-up in 1-2 sentences that naturally references the "
+        f"conversation context above (if available). Sound human, not pushy. "
+        f"No hashtags, no bullet points. Return ONLY the reply."
     )
 
     if getattr(settings, "GEMINI_API_KEY", "").strip() and _gemini_allowed():
@@ -310,6 +511,11 @@ def generate_followup(sender_name: str, business_context: str = "") -> str:
         except Exception as exc:
             logger.warning("OpenAI follow-up failed: %s", _safe_error(exc))
 
+    if last_question:
+        return (
+            f"Hi {display}! Just wanted to follow up — did you get a chance to think about "
+            f"the {last_question.replace('_', ' ')} question? Happy to help whenever you're ready."
+        )
     return (
         f"Hi {display}! Just checking in — did you get a chance to see my last message? "
         f"Happy to help whenever you're ready. 😊"

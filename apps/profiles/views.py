@@ -68,7 +68,7 @@ class GoLoginProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def launch(self, request, pk=None):
-        """Start the GoLogin profile and attach a Selenium driver."""
+        """Start the GoLogin profile browser with runtime lock enforcement."""
         profile = self.get_object()
 
         if not profile.gologin_profile_id:
@@ -77,24 +77,33 @@ class GoLoginProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        profile.status = GoLoginProfile.Status.LAUNCHING
-        profile.save(update_fields=["status"])
+        from apps.profiles.services import launch_profile_runtime, ProfileAlreadyLocked
+        result = launch_profile_runtime(
+            profile.gologin_profile_id,
+            owner=f"user:{request.user.id}",
+        )
 
-        try:
-            gl.launch_profile(profile.gologin_profile_id)
-            profile.status = GoLoginProfile.Status.ACTIVE
-            profile.last_launched_at = timezone.now()
-            profile.save(update_fields=["status", "last_launched_at"])
-            return Response({"detail": "Profile launched", "profile_id": profile.gologin_profile_id})
-        except Exception as exc:
-            profile.status = GoLoginProfile.Status.ERROR
-            profile.save(update_fields=["status"])
-            logger.error("Failed to launch profile %s: %s", profile.gologin_profile_id, exc)
-            return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if result["status"] == "locked":
+            return Response(
+                {"error": "Profile is already launching or running.", "detail": result.get("error", "")},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if result["status"] == "missing_profile":
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        if result["status"] == "failed":
+            logger.error("Failed to launch profile %s: %s", profile.gologin_profile_id, result.get("error"))
+            return Response({"error": result.get("error", "Launch failed")}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "detail": "Profile launched",
+            "profile_id": profile.gologin_profile_id,
+            "session_id": result.get("session_id"),
+            "browser_pid": result.get("browser_pid"),
+        })
 
     @action(detail=True, methods=["post"])
     def stop(self, request, pk=None):
-        """Stop the GoLogin profile and release the Selenium driver."""
+        """Stop the GoLogin profile, release the runtime lock, and close the browser."""
         profile = self.get_object()
 
         if not profile.gologin_profile_id:
@@ -102,12 +111,29 @@ class GoLoginProfileViewSet(viewsets.ModelViewSet):
 
         try:
             gl.stop_profile(profile.gologin_profile_id)
-            profile.status = GoLoginProfile.Status.INACTIVE
-            profile.save(update_fields=["status"])
-            return Response({"detail": "Profile stopped"})
         except Exception as exc:
             logger.error("Failed to stop profile %s: %s", profile.gologin_profile_id, exc)
-            return Response({"error": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        from apps.profiles.services import release_runtime_lock
+        from apps.profiles.runtime_registry import remove as reg_remove
+        reg_remove(profile.gologin_profile_id)
+        release_runtime_lock(profile.gologin_profile_id, None, reason="user_stop")
+
+        GoLoginProfile.objects.filter(pk=profile.pk).update(
+            status=GoLoginProfile.Status.INACTIVE,
+            browser_running=False,
+            extension_connected=False,
+            websocket_connected=False,
+            whatsapp_connected=False,
+            runtime_status=GoLoginProfile.RuntimeStatus.STOPPED,
+            health_status=GoLoginProfile.HealthStatus.UNKNOWN,
+        )
+        from shared.services.websocket_events import emit_dashboard_event
+        emit_dashboard_event(
+            "profile.status.changed",
+            {"profile_id": profile.gologin_profile_id, "runtime_status": "stopped", "reason": "user_stop"},
+        )
+        return Response({"detail": "Profile stopped"})
 
     @action(detail=True, methods=["get"])
     def driver_status(self, request, pk=None):
@@ -129,6 +155,15 @@ class GoLoginProfileViewSet(viewsets.ModelViewSet):
             return Response(data)
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+    @action(detail=False, methods=["post"], url_path="sync")
+    def sync(self, request):
+        """Synchronize local profile rows from GoLogin without deleting campaign-linked rows."""
+        from apps.profiles.services import sync_gologin_profiles
+
+        result = sync_gologin_profiles()
+        http_status = status.HTTP_200_OK if result.get("status") != "failed" else status.HTTP_502_BAD_GATEWAY
+        return Response(result, status=http_status)
 
     @action(detail=False, methods=["get"], url_path="detect", permission_classes=[AllowAny])
     def detect(self, request):

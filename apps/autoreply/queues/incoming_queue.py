@@ -20,6 +20,18 @@ def process_incoming_payload(session_id: int, payload: dict) -> str:
         jid=payload.get("jid", ""),
         preview=payload.get("preview", ""),
         count=payload.get("count", 1),
+        # Stable identifier fields from enhanced extension payload
+        serialized_id=payload.get("serialized_id", ""),
+        pushname=payload.get("pushname", ""),
+        chat_type=payload.get("chat_type", "private"),
+        message_id=payload.get("message_id", ""),
+        extraction_method=payload.get("extraction_method", ""),
+        extraction_metadata={
+            k: v for k, v in payload.items()
+            if k in ("serialized_id", "pushname", "chat_type", "message_id",
+                     "dataset_id", "extraction_method", "hydrated", "chat_opened",
+                     "source", "count")
+        },
     )
 
 

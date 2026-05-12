@@ -1,10 +1,21 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, time as dt_time, timedelta
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 from shared.utils.jid import normalize_jid
 
 logger = logging.getLogger(__name__)
+
+_FOLLOWUP_TZ = "Asia/Kolkata"
+_FOLLOWUP_DAY_START = dt_time(8, 0)   # 8 AM
+_FOLLOWUP_DAY_END   = dt_time(22, 0)  # 10 PM
+
+
+def _is_business_hours() -> bool:
+    """Return True if the current time is within 8 AM – 10 PM IST."""
+    now = datetime.now(ZoneInfo(_FOLLOWUP_TZ)).time()
+    return _FOLLOWUP_DAY_START <= now < _FOLLOWUP_DAY_END
 
 
 def send_followup_messages():
@@ -12,6 +23,10 @@ def send_followup_messages():
     from apps.realtime.consumers import push_task_to_profile
     from apps.sessions.models import IncomingMessage, WhatsAppSession
     from utils.ai_message import generate_followup
+
+    if not _is_business_hours():
+        logger.info("[Followup] Outside business hours — skipping run")
+        return {"skipped": "outside_business_hours"}
 
     now = timezone.now()
     three_hours_ago = now - timedelta(hours=3)
@@ -60,11 +75,46 @@ def send_followup_messages():
         ).filter(
             Q(sender_phone=log.phone_number) | Q(sender_name=log.phone_number)
         ).exists():
-            logger.info("Follow-up skipped - %s replied after auto-reply", log.phone_number)
+            logger.info("[Followup] Skipped — contact replied after last message: %s", log.phone_number)
             continue
 
+        # ── Build conversation context for a smarter follow-up ────────────────
+        stage = ""
+        last_question = ""
+        last_user_message = ""
+        try:
+            from apps.sessions.models import Conversation
+            from apps.autoreply.models import ConversationMessage, ConversationState
+
+            conv = Conversation.objects.filter(
+                profile=profile,
+                whatsapp_jid=normalize_jid(log.whatsapp_jid, phone=log.phone_number),
+            ).first()
+            if conv:
+                conv_state = ConversationState.objects.filter(conversation=conv).first()
+                if conv_state:
+                    stage = conv_state.stage or ""
+                    last_question = conv_state.last_question_key or ""
+
+                last_msg = (
+                    ConversationMessage.objects
+                    .filter(conversation=conv, sender="user")
+                    .order_by("-created_at")
+                    .first()
+                )
+                if last_msg:
+                    last_user_message = (last_msg.text or "")[:120]
+        except Exception as exc:
+            logger.warning("[Followup] Context fetch failed for %s: %s", log.phone_number, exc)
+
         business_context = profile.business_context or ""
-        follow_up_text = generate_followup("", business_context)
+        follow_up_text = generate_followup(
+            sender_name="",
+            business_context=business_context,
+            stage=stage,
+            last_question=last_question,
+            last_user_message=last_user_message,
+        )
 
         follow_log = MessageLog.objects.create(
             profile=profile,
@@ -81,9 +131,10 @@ def send_followup_messages():
             jid=follow_log.whatsapp_jid,
         )
         logger.info(
-            "Follow-up queued for %s (original auto-reply sent at %s)",
+            "[Followup] Queued for %s — stage=%s last_question=%s",
             log.phone_number,
-            log.sent_at,
+            stage or "unknown",
+            last_question or "none",
         )
 
     return {"processed": len(seen)}

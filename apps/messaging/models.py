@@ -34,6 +34,16 @@ class Campaign(models.Model):
         FAILED = "failed", "Failed"
         PAUSED = "paused", "Paused"
 
+    class Intent(models.TextChoices):
+        OUTREACH = "outreach", "Outreach"
+        SALES = "sales", "Sales"
+        SUPPORT = "support", "Support"
+        FOLLOWUP = "followup", "Follow-up"
+        REENGAGEMENT = "reengagement", "Re-engagement"
+        ONBOARDING = "onboarding", "Onboarding"
+        REMINDER = "reminder", "Reminder"
+        WARMUP = "warmup", "Warm-up"
+
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="campaigns")
     name = models.CharField(max_length=255)
     profile = models.ForeignKey(
@@ -72,6 +82,20 @@ class Campaign(models.Model):
             '(8-11am, 1-4pm, 7-10pm). '
             'Format: [{"start":"08:00","end":"11:00"},{"start":"13:00","end":"16:00"}]'
         )
+    )
+    campaign_intent = models.CharField(
+        max_length=20,
+        choices=Intent.choices,
+        default=Intent.OUTREACH,
+        help_text="Intent guides AI message generation tone and content.",
+    )
+    ai_mode = models.BooleanField(
+        default=True,
+        help_text=(
+            "When ON, the system auto-selects the best profile and generates "
+            "a unique, personalized AI message for every contact. "
+            "Turn OFF to use a fixed template or custom_message instead."
+        ),
     )
     auto_send = models.BooleanField(
         default=False,

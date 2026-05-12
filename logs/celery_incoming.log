@@ -1,0 +1,94 @@
+[2026-05-10 03:17:02,998: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-10 03:17:05,030: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-10 03:17:12,208: INFO/MainProcess] mingle: all alone
+[2026-05-10 03:17:22,400: INFO/MainProcess] celery@DESKTOP-AL8P1A2 ready.
+[2026-05-11 05:57:04,195: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-11 05:57:06,228: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-11 05:57:13,342: INFO/MainProcess] mingle: all alone
+[2026-05-11 05:57:23,492: INFO/MainProcess] incoming@DESKTOP-AL8P1A2 ready.
+[2026-05-11 05:58:54,460: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 05:58:58,526: INFO/MainProcess] sync with retry@DESKTOP-AL8P1A2
+[2026-05-11 05:59:06,717: INFO/MainProcess] sync with celery@DESKTOP-AL8P1A2
+[2026-05-11 05:59:54,466: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:00:54,471: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:00:59,472: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:01:54,477: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:01:59,478: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:01:59,478: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:02:59,483: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:03:53,206: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:03:53,206: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:04:03,207: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:04:53,211: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:04:53,212: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:05:03,212: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:05:08,213: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:05:53,217: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:05:53,217: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:05:58,218: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:06:03,218: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:06:53,223: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:07:03,224: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:07:03,225: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:07:13,226: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:07:13,226: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:07:48,230: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:07:53,231: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:08:03,232: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 06:08:03,232: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:08:13,233: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 06:08:18,234: INFO/MainProcess] missed heartbeat from celery@DESKTOP-AL8P1A2
+[2026-05-11 18:07:59,454: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-11 18:08:01,502: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-11 18:08:08,651: INFO/MainProcess] mingle: all alone
+[2026-05-11 18:08:18,899: INFO/MainProcess] incoming@DESKTOP-AL8P1A2 ready.
+[2026-05-11 18:08:25,702: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 18:09:31,206: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-11 18:09:33,253: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-11 18:09:40,398: INFO/MainProcess] mingle: all alone
+[2026-05-11 18:09:50,654: INFO/MainProcess] incoming@DESKTOP-AL8P1A2 ready.
+[2026-05-11 18:20:34,007: INFO/MainProcess] missed heartbeat from retry@DESKTOP-AL8P1A2
+[2026-05-11 18:20:34,008: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 18:20:34,008: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 18:44:34,343: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 18:44:34,346: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 18:44:34,347: INFO/MainProcess] missed heartbeat from retry@DESKTOP-AL8P1A2
+[2026-05-11 18:49:29,389: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 19:08:49,526: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 19:08:49,527: INFO/MainProcess] missed heartbeat from retry@DESKTOP-AL8P1A2
+[2026-05-11 19:08:49,527: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 19:09:01,857: INFO/MainProcess] sync with default@DESKTOP-AL8P1A2
+[2026-05-11 19:09:01,935: INFO/MainProcess] sync with retry@DESKTOP-AL8P1A2
+[2026-05-11 19:09:01,938: INFO/MainProcess] sync with campaign@DESKTOP-AL8P1A2
+[2026-05-11 19:09:14,529: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 19:14:04,058: INFO/MainProcess] Task autoreply.process_incoming_message[fb045499-69d1-4644-8b1c-8a876f9b1d7a] received
+[2026-05-11 19:14:04,407: INFO/MainProcess] Task autoreply.process_incoming_message[fb045499-69d1-4644-8b1c-8a876f9b1d7a] succeeded in 0.3474273999745492s: 'scheduled'
+[2026-05-11 19:14:05,045: INFO/MainProcess] Task autoreply.process_incoming_message[e46960df-7db8-4258-8c2e-45667afd60df] received
+[2026-05-11 19:14:05,101: INFO/MainProcess] Task autoreply.process_incoming_message[e46960df-7db8-4258-8c2e-45667afd60df] succeeded in 0.05617960001109168s: 'duplicate'
+[2026-05-11 19:14:07,051: INFO/MainProcess] Task autoreply.process_incoming_message[bc6961cf-31aa-4b4d-8aa5-be0f880f67a3] received
+[2026-05-11 19:14:07,128: INFO/MainProcess] Task autoreply.process_incoming_message[bc6961cf-31aa-4b4d-8aa5-be0f880f67a3] succeeded in 0.07616409999900497s: 'missing_jid'
+[2026-05-11 19:14:07,131: INFO/MainProcess] Task autoreply.process_incoming_message[54848291-7d30-4ffc-bd74-cd0feaf7e8b8] received
+[2026-05-11 19:14:07,216: INFO/MainProcess] Task autoreply.process_incoming_message[54848291-7d30-4ffc-bd74-cd0feaf7e8b8] succeeded in 0.08406100000138395s: 'missing_jid'
+[2026-05-11 19:14:07,220: INFO/MainProcess] Task autoreply.process_incoming_message[51787e93-b9c7-4cf5-a783-22f327d72ff1] received
+[2026-05-11 19:14:07,297: INFO/MainProcess] Task autoreply.process_incoming_message[51787e93-b9c7-4cf5-a783-22f327d72ff1] succeeded in 0.07633519999217242s: 'missing_jid'
+[2026-05-11 19:15:14,557: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 19:24:44,612: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 19:44:29,726: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 19:46:24,741: INFO/MainProcess] missed heartbeat from retry@DESKTOP-AL8P1A2
+[2026-05-11 19:53:22,767: INFO/MainProcess] missed heartbeat from retry@DESKTOP-AL8P1A2
+[2026-05-11 19:55:40,796: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 19:55:40,797: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 19:55:40,797: INFO/MainProcess] missed heartbeat from retry@DESKTOP-AL8P1A2
+[2026-05-11 20:28:51,265: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 20:28:51,266: INFO/MainProcess] missed heartbeat from campaign@DESKTOP-AL8P1A2
+[2026-05-11 20:30:40,881: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-11 20:32:50,930: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2
+[2026-05-12 02:57:44,539: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2026-05-12 02:57:46,567: INFO/MainProcess] mingle: searching for neighbors
+[2026-05-12 02:57:53,676: INFO/MainProcess] mingle: all alone
+[2026-05-12 02:58:03,868: INFO/MainProcess] incoming@DESKTOP-AL8P1A2 ready.
+[2026-05-12 03:02:39,988: INFO/MainProcess] Task autoreply.process_incoming_message[8a68b014-003a-40b2-8c3b-b1d485cb2fa2] received
+[2026-05-12 03:02:40,563: INFO/MainProcess] Task autoreply.process_incoming_message[8a68b014-003a-40b2-8c3b-b1d485cb2fa2] succeeded in 0.5749906999990344s: 'scheduled'
+[2026-05-12 03:02:40,566: INFO/MainProcess] Task autoreply.process_incoming_message[4a4927e4-846d-43f4-9ef1-ac53f541897d] received
+[2026-05-12 03:02:40,614: INFO/MainProcess] Task autoreply.process_incoming_message[4a4927e4-846d-43f4-9ef1-ac53f541897d] succeeded in 0.0469372000079602s: 'duplicate'
+[2026-05-12 03:08:00,769: INFO/MainProcess] missed heartbeat from default@DESKTOP-AL8P1A2

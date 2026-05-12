@@ -57,16 +57,17 @@ class CampaignViewSet(viewsets.ModelViewSet):
     """
     Campaign management — create, configure, launch, and monitor campaigns.
 
-    POST   /api/messaging/campaigns/                   — create campaign
-    GET    /api/messaging/campaigns/                   — list campaigns
-    GET    /api/messaging/campaigns/{id}/              — retrieve campaign
-    PUT    /api/messaging/campaigns/{id}/              — update campaign
-    DELETE /api/messaging/campaigns/{id}/              — delete campaign
-    POST   /api/messaging/campaigns/{id}/start/        — launch campaign (async via Celery)
-    POST   /api/messaging/campaigns/{id}/start_sync/   — launch campaign (synchronous, for testing)
-    POST   /api/messaging/campaigns/{id}/pause/        — pause (stops scheduling new messages)
-    GET    /api/messaging/campaigns/{id}/logs/         — get message logs for this campaign
-    GET    /api/messaging/campaigns/{id}/stats/        — campaign stats summary
+    POST   /api/messaging/campaigns/                       — create campaign
+    GET    /api/messaging/campaigns/                       — list campaigns
+    GET    /api/messaging/campaigns/{id}/                  — retrieve campaign
+    PUT    /api/messaging/campaigns/{id}/                  — update campaign
+    DELETE /api/messaging/campaigns/{id}/                  — delete campaign
+    POST   /api/messaging/campaigns/{id}/start/            — launch campaign (async via Celery)
+    POST   /api/messaging/campaigns/{id}/start_sync/       — launch campaign (synchronous, for testing)
+    POST   /api/messaging/campaigns/{id}/pause/            — pause (stops scheduling new messages)
+    GET    /api/messaging/campaigns/{id}/logs/             — get message logs for this campaign
+    GET    /api/messaging/campaigns/{id}/stats/            — campaign stats summary
+    GET    /api/messaging/campaigns/suggested_profile/     — best available profile for this user
     """
 
     permission_classes = [IsAuthenticated]
@@ -92,7 +93,45 @@ class CampaignViewSet(viewsets.ModelViewSet):
             raise
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        from apps.profiles.services import select_best_profile
+        from django.utils import timezone as tz
+
+        # Auto-select the best available profile when not provided
+        profile = serializer.validated_data.get("profile")
+        if not profile:
+            profile = select_best_profile(self.request.user)
+
+        # Auto-generate campaign name when not provided
+        name = serializer.validated_data.get("name", "").strip()
+        if not name:
+            intent = serializer.validated_data.get("campaign_intent", "outreach")
+            date_label = tz.localdate().strftime("%d %b")
+            name = f"{intent.title()} — {date_label}"
+
+        ai_mode = serializer.validated_data.get("ai_mode", True)
+        serializer.save(owner=self.request.user, profile=profile, name=name, ai_mode=ai_mode)
+
+    @action(detail=False, methods=["get"], url_path="suggested_profile")
+    def suggested_profile(self, request):
+        """Return the best available profile for automated campaign sending."""
+        from apps.profiles.services import select_best_profile
+        profile = select_best_profile(request.user)
+        if not profile:
+            return Response(
+                {"profile": None, "message": "No usable profiles found. Launch a profile first."},
+                status=status.HTTP_200_OK,
+            )
+        return Response({
+            "profile": {
+                "id": profile.id,
+                "name": profile.name,
+                "gologin_profile_id": profile.gologin_profile_id,
+                "runtime_status": profile.runtime_status,
+                "health_status": profile.health_status,
+                "whatsapp_connected": profile.whatsapp_connected,
+            },
+            "message": f"Auto-selected: {profile.name}",
+        })
 
     @action(detail=True, methods=["post"])
     def start(self, request, pk=None):

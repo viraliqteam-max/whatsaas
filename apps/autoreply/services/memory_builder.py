@@ -32,5 +32,16 @@ def build_memory(conversation, lead, limit: int = 12) -> ConversationMemory:
         "matched_service": lead.matched_service,
         "qualification_score": lead.qualification_score,
         "is_qualified": lead.is_qualified,
+        "missing_fields": [
+            field for field in (
+                "company_name",
+                "contact_name",
+                "business_type",
+                "main_problem",
+                "current_marketing_method",
+                "matched_service",
+            )
+            if not getattr(lead, field)
+        ],
     }
     return ConversationMemory(messages=messages, lead_snapshot=lead_snapshot)

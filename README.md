@@ -91,9 +91,23 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-**Terminal 2 — Celery worker (for async campaigns):**
+**Terminal 2 — Celery worker (Windows):**
 ```powershell
-celery -A config worker -l info --pool=solo
+.\scripts\celery_default_worker.ps1
+```
+
+For the dedicated incoming-message queue, run:
+
+```powershell
+.\scripts\celery_incoming_worker.ps1
+```
+
+If you start Celery manually on Windows, always include `--pool=solo`. Without
+that flag Celery uses `prefork`, which can fail on Windows with
+`PermissionError: [WinError 5] Access is denied` from billiard multiprocessing.
+
+```powershell
+venv\Scripts\celery.exe -A config worker -Q incoming_queue --pool=solo --loglevel=info -n incoming@%h
 ```
 
 ---

@@ -1,9 +1,14 @@
 import hashlib
+import logging
 import re
+
+from django.conf import settings
 
 from apps.autoreply.models import ConversationState
 from apps.autoreply.services.prompt_registry import VIRALIQ_LEAD_QUALIFIER_PROMPT
 from apps.autoreply.services.state_machine import next_question_key
+
+logger = logging.getLogger(__name__)
 
 
 QUESTION_TEXT = {
@@ -56,26 +61,88 @@ def prompt_hash() -> str:
     return hashlib.sha256(VIRALIQ_LEAD_QUALIFIER_PROMPT.encode("utf-8")).hexdigest()
 
 
-def generate_reply(user_text: str, memory, state, lead, intent: str, language: str, rag_context: str = "") -> str:
+def generate_reply(
+    user_text: str,
+    memory,
+    state,
+    lead,
+    intent: str,
+    language: str,
+    rag_context: str = "",
+    business_context: str = "",
+) -> str:
+    # Determine which topic/key the state machine wants next
     key = next_question_key(state, lead)
     if key == state.last_question_key:
         key = _fallback_question_key(key, lead)
-
-    reply = _question_for(key, language)
     if intent == "pricing":
-        reply = _localized(language, "Pricing depends on your goal and volume. What business are you running?")
         key = "business_type"
     elif intent == "objection":
-        reply = _localized(language, "No problem. Are you just exploring or actively looking right now?")
         key = "objection_status"
     elif state.stage == ConversationState.Stage.CTA:
-        reply = _question_for("book_call", language)
         key = "book_call"
+
+    # ── Try LLM first for natural, context-aware replies ──────────────────────
+    _has_keys = any([
+        getattr(settings, "GEMINI_API_KEY", "").strip(),
+        getattr(settings, "GROQ_API_KEY", "").strip(),
+        getattr(settings, "OPENAI_API_KEY", "").strip(),
+    ])
+    if _has_keys:
+        try:
+            from utils.ai_message import generate_conversation_reply
+            system_prompt = _build_ai_system_prompt(business_context, state, lead, key, language)
+            # Exclude the current user message (last item) — it's passed separately as user_text
+            history = []
+            if memory and memory.messages:
+                for msg in memory.messages[:-1]:
+                    history.append({"role": msg["role"], "content": msg["content"]})
+            ai_reply = generate_conversation_reply(system_prompt, history, user_text)
+            if ai_reply:
+                ai_reply = validate_reply(ai_reply)
+                state.last_question_key = key
+                state.save(update_fields=["last_question_key", "updated_at"])
+                logger.info("[AIReply] key=%s intent=%s language=%s len=%d", key, intent, language, len(ai_reply))
+                return ai_reply
+        except Exception as exc:
+            logger.warning("[AIReply] LLM failed, falling back to hardcoded: %s", exc)
+
+    # ── Hardcoded Q&A fallback (always works, no API keys needed) ─────────────
+    if intent == "pricing":
+        reply = _localized(language, "Pricing depends on your goal and volume. What business are you running?")
+    elif intent == "objection":
+        reply = _localized(language, "No problem. Are you just exploring or actively looking right now?")
+    elif state.stage == ConversationState.Stage.CTA:
+        reply = _question_for("book_call", language)
+    else:
+        reply = _question_for(key, language)
 
     reply = validate_reply(reply)
     state.last_question_key = key
     state.save(update_fields=["last_question_key", "updated_at"])
     return reply
+
+
+def _build_ai_system_prompt(business_context: str, state, lead, next_key: str, language: str) -> str:
+    """Build a complete system prompt combining the base qualifier prompt with live lead context."""
+    prompt = VIRALIQ_LEAD_QUALIFIER_PROMPT
+
+    if business_context:
+        prompt += f"\n\nBUSINESS CONTEXT FOR THIS PROFILE:\n{business_context}"
+
+    missing = [
+        f for f in ("company_name", "contact_name", "business_type", "main_problem", "current_marketing_method")
+        if not getattr(lead, f, "")
+    ]
+    prompt += (
+        f"\n\nCONVERSATION STATE (internal guidance — never mention to customer):"
+        f"\n- Stage: {state.stage}"
+        f"\n- Lead qualification score: {getattr(lead, 'qualification_score', 0)}/10"
+        f"\n- Still need to collect: {', '.join(missing) if missing else 'all captured'}"
+        f"\n- Next topic to guide toward: {next_key.replace('_', ' ')}"
+        f"\n- Reply language: {language}"
+    )
+    return prompt
 
 
 def generate_safe_fallback_reply(user_text: str, language: str = "english") -> str:

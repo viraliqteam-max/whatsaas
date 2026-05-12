@@ -20,11 +20,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     statusEl.className = 'pill ' + (
       s === 'connected'  ? 'connected'  :
       s === 'connecting' ? 'connecting' :
+      s === 'reconnecting' ? 'connecting' :
       'disconnected'
     );
     statusEl.textContent =
       s === 'connected'  ? '● Connected to server' :
       s === 'connecting' ? '◌ Connecting…'         :
+      s === 'reconnecting' ? '◌ Reconnecting…'     :
                            '○ Disconnected';
   }
 

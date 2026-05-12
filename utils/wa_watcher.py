@@ -138,15 +138,21 @@ _SCAN_JS = """
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def start(profile_id: str, debug_addr: str) -> None:
-    """Start an event-driven watcher thread for profile_id.  No-op if already running."""
+def start(profile_id: str, debug_addr: str, on_disconnect=None) -> None:
+    """
+    Start an event-driven watcher thread for profile_id.  No-op if already running.
+
+    on_disconnect: optional callable(profile_id) fired when the browser closes.
+    Used by services.on_browser_disconnect to release the runtime lock and
+    update DB/frontend state automatically.
+    """
     with _registry_lock:
         if profile_id in _watchers:
             return
         stop_event = threading.Event()
         t = threading.Thread(
             target=_run,
-            args=(profile_id, debug_addr, stop_event),
+            args=(profile_id, debug_addr, stop_event, on_disconnect),
             daemon=True,
             name=f"wa-watcher-{profile_id[:8]}",
         )
@@ -199,7 +205,7 @@ def _inject_observer(profile_id: str, page) -> None:
         logger.debug("WAWatcher: observer inject failed for profile %s: %s", profile_id, exc)
 
 
-def _run(profile_id: str, debug_addr: str, stop_event: threading.Event) -> None:
+def _run(profile_id: str, debug_addr: str, stop_event: threading.Event, on_disconnect=None) -> None:
     """
     Background thread body.
 
@@ -305,6 +311,12 @@ def _run(profile_id: str, debug_addr: str, stop_event: threading.Event) -> None:
     except Exception as exc:
         logger.error("WAWatcher unexpected error for profile %s: %s", profile_id, exc)
     finally:
+        # Fire disconnect callback so the runtime lock is released and DB/frontend updated
+        if on_disconnect:
+            try:
+                on_disconnect(profile_id)
+            except Exception as cb_exc:
+                logger.warning("WAWatcher on_disconnect callback failed profile=%s: %s", profile_id, cb_exc)
         # Close the per-thread Django DB connection so it is not leaked.
         try:
             from django.db import connection as _db_conn

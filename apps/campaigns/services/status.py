@@ -1,6 +1,7 @@
 import logging
 
 from django.utils import timezone
+from shared.services.websocket_events import emit_dashboard_event
 from shared.utils.jid import normalize_jid, validate_jid
 
 logger = logging.getLogger(__name__)
@@ -99,16 +100,26 @@ def mark_message_stage(log_id, stage: str, error: str = "") -> str:
         return "already_sent"
 
     log.status = stage
-    if error:
-        log.error_message = error
+    log.error_message = error  # always write — clears stale errors when error=""
     log.save(update_fields=["status", "error_message"])
     logger.info(
-        "Message stage updated - log=%s status=%s profile=%s jid=%s error=%s",
+        "[DB-Updated] log=%s status=%s profile=%s jid=%s error=%s",
         log.id,
         stage,
         getattr(log.profile, "gologin_profile_id", "") if log.profile_id else "",
         log.whatsapp_jid,
         error or "",
+    )
+    emit_dashboard_event(
+        "conversation.delivery.updated",
+        {
+            "profile_id": getattr(log.profile, "gologin_profile_id", "") if log.profile_id else "",
+            "campaign_id": log.campaign_id,
+            "message_id": log.id,
+            "jid": log.whatsapp_jid,
+            "status": stage,
+            "error": error or "",
+        },
     )
     return "updated"
 
@@ -155,7 +166,18 @@ def handle_message_ack(data: dict) -> str:
         log.status = MessageLog.Status.SENT
         log.sent_at = timezone.now()
         log.save(update_fields=["status", "sent_at", "error_message"])
-        logger.info("[DB] update result - log=%s status=sent sent_at=%s", log.id, log.sent_at)
+        logger.info("[DB-Updated] log=%s status=sent sent_at=%s", log.id, log.sent_at)
+        emit_dashboard_event(
+            "campaign.message.sent" if log.campaign_id else "conversation.delivery.updated",
+            {
+                "profile_id": getattr(log.profile, "gologin_profile_id", "") if log.profile_id else data.get("profile_id", ""),
+                "campaign_id": log.campaign_id,
+                "message_id": log.id,
+                "jid": log.whatsapp_jid,
+                "status": "sent",
+                "sent_at": log.sent_at.isoformat(),
+            },
+        )
         return _complete_campaign_if_ready(log)
 
     failure_statuses = {
@@ -167,11 +189,52 @@ def handle_message_ack(data: dict) -> str:
         "dom_not_loaded",
         "failed",
     }
+    retry_statuses = {
+        "whatsapp_not_ready",
+        "content_script_missing",
+        "websocket_disconnected",
+        "routing_mismatch",
+    }
+    if status in retry_statuses:
+        log.status = MessageLog.Status.RETRYING
+        log.error_message = error or status
+        log.save(update_fields=["status", "error_message"])
+        try:
+            from apps.campaigns.tasks import check_message_ack_timeout_task
+
+            check_message_ack_timeout_task.apply_async(args=[int(log.id)], countdown=30)
+        except Exception as exc:
+            logger.warning("[Retry] schedule failed - log=%s error=%s", log.id, exc)
+        logger.warning("[Retry] ACK retryable - log=%s jid=%s status=%s error=%s", log.id, log.whatsapp_jid, status, log.error_message)
+        return "retrying"
     if status in failure_statuses:
+        _channel_closed = ('message channel closed', 'listener indicated an asynchronous response')
+        if any(phrase in (error or '').lower() for phrase in _channel_closed):
+            log.status = MessageLog.Status.RETRYING
+            log.error_message = error or status
+            log.save(update_fields=["status", "error_message"])
+            try:
+                from apps.campaigns.tasks import check_message_ack_timeout_task
+                check_message_ack_timeout_task.apply_async(args=[int(log.id)], countdown=30)
+            except Exception as exc:
+                logger.warning("[Retry] schedule failed - log=%s error=%s", log.id, exc)
+            logger.warning("[Retry] channel_closed retryable - log=%s jid=%s error=%s", log.id, log.whatsapp_jid, error)
+            return "retrying"
         log.status = MessageLog.Status.FAILED
         log.error_message = error or status
         log.save(update_fields=["status", "error_message"])
         logger.warning("[Failure] ACK saved - log=%s jid=%s status=%s error=%s", log.id, log.whatsapp_jid, status, log.error_message)
+        emit_dashboard_event(
+            "campaign.message.failed" if log.campaign_id else "conversation.message.failed",
+            {
+                "profile_id": getattr(log.profile, "gologin_profile_id", "") if log.profile_id else data.get("profile_id", ""),
+                "campaign_id": log.campaign_id,
+                "message_id": log.id,
+                "jid": log.whatsapp_jid,
+                "status": status,
+                "error": log.error_message,
+            },
+        )
         return _complete_campaign_if_ready(log)
 
     logger.warning("ACK ignored - log=%s unknown status=%s payload=%s", log.id, status, data)

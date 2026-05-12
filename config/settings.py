@@ -139,6 +139,7 @@ from shared.constants.queues import (
     DEFAULT_QUEUE,
     INCOMING_QUEUE,
     INCOMING_TASKS,
+    PROFILE_TASKS,
     QUEUE_NAMES,
     RETRY_QUEUE,
 )
@@ -160,8 +161,34 @@ CELERY_TASK_QUEUES = tuple(
 CELERY_TASK_ROUTES = {
     **{task_name: {"queue": CAMPAIGN_QUEUE, "routing_key": CAMPAIGN_QUEUE} for task_name in CAMPAIGN_TASKS},
     **{task_name: {"queue": INCOMING_QUEUE, "routing_key": INCOMING_QUEUE} for task_name in INCOMING_TASKS},
+    **{task_name: {"queue": DEFAULT_QUEUE, "routing_key": DEFAULT_QUEUE} for task_name in PROFILE_TASKS},
     "*.retry": {"queue": RETRY_QUEUE, "routing_key": RETRY_QUEUE},
     "*.retries": {"queue": RETRY_QUEUE, "routing_key": RETRY_QUEUE},
+}
+CELERY_BEAT_SCHEDULE = {
+    "sync-gologin-profiles-every-3-minutes": {
+        "task": "profiles.sync_gologin_profiles",
+        "schedule": 180.0,
+    },
+    # Heartbeat stale window = 15 s (3× the 5 s extension heartbeat interval).
+    # Running every 15 s keeps DB/frontend in sync with actual runtime state.
+    "check-profile-heartbeats-every-15s": {
+        "task": "profiles.check_profile_heartbeats",
+        "schedule": 15.0,
+    },
+    # Release phantom locks: dead PIDs, launch timeouts, cross-process disconnects.
+    "cleanup-stale-runtimes-every-10s": {
+        "task": "profiles.cleanup_stale_runtimes",
+        "schedule": 10.0,
+    },
+    "reconcile-stale-messages-every-minute": {
+        "task": "messaging.reconcile_stale_messages",
+        "schedule": 60.0,
+    },
+    "send-followup-messages-every-hour": {
+        "task": "autoreply.send_followup_messages",
+        "schedule": 3600.0,
+    },
 }
 
 CACHES = {

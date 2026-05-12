@@ -39,6 +39,8 @@ def should_ignore_incoming_event(sender_name: str, preview: str) -> bool:
         return True
     if lower_preview.endswith(" unread message") or lower_preview.endswith(" unread messages"):
         return True
-    if re.search(r"[\u0900-\u097F]", sender_name or "") and re.search(r"\d+", sender_name or ""):
+    # Only filter pure count labels like "5 \u0938\u0902\u0926\u0947\u0936" (digit(s) + only Devanagari).
+    # Do NOT filter real Hindi names that contain digits, e.g. "Ramesh 9", "Class 10".
+    if re.match(r"^\d+\s*[\u0900-\u097F]+$", sender_name or ""):
         return True
     return False

@@ -1,284 +1,608 @@
-# PROJECT SKILLS & ARCHITECTURE RULES
+# skills.md
+
+# Production Architecture & Runtime Orchestration Rules
 
 # Project Overview
 
-You are a senior AI backend architect and Django systems engineer.
+You are a senior AI backend architect and distributed runtime systems engineer.
 
-This project is a scalable WhatsApp automation platform focused on:
+This project is a scalable browser orchestration and WhatsApp automation platform built using:
 
-* campaign management
+* Django backend
+* GoLogin browser profiles
+* Playwright automation
+* Chrome extension agent
+* WebSocket realtime communication
+* Queue-driven background processing
+* Runtime heartbeat synchronization
+* AI/context-aware messaging
+* Campaign processing pipelines
+
+The platform is designed to support:
+
+* multiple concurrent GoLogin runtimes
 * realtime incoming message processing
-* AI/context-based auto replies
-* websocket dashboard updates
-* queue-based background processing
-* future production scalability
+* campaign broadcasting
+* AI/autoreply systems
+* scalable browser orchestration
+* future distributed deployment
 
-The system is being built gradually with clean architecture principles.
+The architecture must prioritize:
 
-Current architecture goal:
-
-* modular monolith
-* service separation internally
-* scalable folder structure
-* Redis + Celery ready
-* production-ready coding practices
-
-This project is NOT a full microservices architecture yet.
-
-The focus is:
-
-* stability
-* clean separation
-* scalable foundations
-* beginner-friendly maintainability
+1. stability
+2. synchronization reliability
+3. runtime ownership integrity
+4. clean modular structure
+5. queue isolation
+6. scalable foundations
+7. production-grade fault tolerance
 
 ---
 
-# Core Architecture Philosophy
+# Core System Philosophy
 
-The project must follow:
+This project is NOT a simple WhatsApp bot.
 
-* separation of responsibilities
-* queue-driven processing
-* isolated background workers
-* minimal blocking operations
-* modular app structure
-* scalable processing pipelines
+This project is evolving into:
 
-Heavy operations must NEVER block:
+* distributed browser runtime manager
+* Playwright orchestration platform
+* realtime automation infrastructure
+* queue-driven messaging platform
+* scalable browser session orchestrator
 
-* incoming messages
+The system must remain:
+
+* modular
+* queue-driven
+* reconnect-safe
+* runtime-aware
+* horizontally scalable
+* fault-tolerant
+
+---
+
+# Core Architecture
+
+Frontend UI
+↓
+Django API Layer
+↓
+Runtime Session Manager
+↓
+Queue / Task Layer
+↓
+GoLogin Launcher
+↓
+Chrome Browser
+↓
+Playwright Runtime Controller
+↓
+Extension Agent
+↓
+WebSocket Heartbeat Layer
+
+---
+
+# Runtime Source of Truth
+
+The system must NEVER trust:
+
+* frontend state
+* button clicks
+* stale DB values
+* cached UI states
+
+The ONLY source of truth is:
+
+heartbeat
+
+> Playwright browser connection
+> extension websocket state
+> browser PID alive
+> DB state
+> frontend UI
+
+Frontend reflects runtime state.
+Frontend does NOT determine runtime state.
+
+---
+
+# Core Runtime Rules
+
+MANDATORY:
+
+* one GoLogin profile = one active runtime
+* one profile = one Playwright ownership
+* one profile = one websocket ownership
+* one profile = one heartbeat owner
+
+Duplicate runtime ownership must NEVER happen.
+
+---
+
+# Mandatory Profile Locking
+
+Profile locking is REQUIRED.
+
+Before launching:
+
+1. atomically acquire profile lock
+2. create runtime_session_id
+3. store runtime ownership
+4. prevent duplicate launches
+
+If:
+profile.locked == True
+
+Then:
+
+* reject launch
+* reject Playwright attach
+* reject websocket ownership
+* reject stale reconnect
+
+---
+
+# Correct Runtime Lifecycle
+
+Launch requested
+↓
+Acquire lock
+↓
+Generate runtime_session_id
+↓
+status = launching
+↓
+Launch GoLogin browser
+↓
+Attach Playwright via connect_over_cdp
+↓
+Attach browser.on("disconnected")
+↓
+Extension websocket connects
+↓
+Heartbeat verification starts
+↓
+ONLY THEN:
+status = active
+
+IMPORTANT:
+Never mark profile active immediately after launch request.
+
+---
+
+# Runtime Session Manager
+
+The Runtime Session Manager is the central orchestration layer.
+
+Responsibilities:
+
+* runtime ownership tracking
+* Playwright lifecycle tracking
+* websocket ownership validation
+* heartbeat synchronization
+* stale runtime cleanup
+* reconnect validation
+* profile locking enforcement
+* browser lifecycle management
+
+---
+
+# Runtime Registry
+
+The in-memory runtime registry is the REAL runtime truth.
+
+Example:
+
+ACTIVE_PROFILES = {
+profile_id: {
+"playwright_browser": browser,
+"context": context,
+"page": page,
+"pid": pid,
+"runtime_session_id": uuid,
+"last_heartbeat": timestamp,
+"websocket_connected": True,
+"playwright_connected": True,
+}
+}
+
+The registry manages:
+
+* runtime ownership
+* active browser references
+* heartbeat tracking
+* cleanup lifecycle
+* websocket ownership
+* stale runtime prevention
+
+---
+
+# GoLogin Responsibility
+
+GoLogin is ONLY responsible for:
+
+* browser identity isolation
+* fingerprint management
+* profile launch infrastructure
+* cookie/local storage isolation
+
+GoLogin is NOT responsible for:
+
+* runtime orchestration
+* websocket lifecycle
+* runtime ownership
+* stale cleanup
+* synchronization
+* heartbeat validation
+
+---
+
+# Playwright Responsibility
+
+Playwright is the runtime browser controller.
+
+Responsibilities:
+
+* connect_over_cdp
+* browser lifecycle awareness
+* DOM automation
+* browser health verification
+* disconnect detection
+* runtime cleanup signals
+* page lifecycle management
+
+IMPORTANT:
+Playwright becomes the primary browser-awareness layer.
+
+---
+
+# Critical Playwright Events
+
+## browser.on("disconnected")
+
+This is a CRITICAL runtime cleanup signal.
+
+When triggered:
+
+* unlock profile
+* cleanup runtime registry
+* disconnect websocket ownership
+* stop heartbeat ownership
+* remove ACTIVE_PROFILES entry
+* deactivate profile
+* notify frontend
+
+## page.on("close")
+
+Secondary browser closure verification.
+
+---
+
+# Heartbeat Architecture
+
+Heartbeat is the PRIMARY runtime verification system.
+
+Extension heartbeat interval:
+
+* every 5 seconds
+
+Example payload:
+
+{
+"type": "heartbeat",
+"profile_id": "...",
+"runtime_session_id": "...",
+"timestamp": ...
+}
+
+Backend validates:
+
+* runtime ownership
+* websocket ownership
+* runtime_session_id
+* active runtime validity
+
+Backend updates:
+
+* last_heartbeat
+
+---
+
+# Heartbeat Timeout Rules
+
+If no heartbeat received within 15 seconds:
+
+MANDATORY ACTIONS:
+
+* unlock profile
+* status = inactive
+* cleanup runtime registry
+* disconnect websocket ownership
+* cleanup Playwright references
+* remove stale ownership
+* notify frontend
+
+Heartbeat timeout is the PRIMARY disconnect detector.
+
+---
+
+# Browser Close Detection
+
+Browser closure must use MULTI-LAYER verification.
+
+Priority order:
+
+1. heartbeat timeout
+2. browser.on("disconnected")
+3. PID monitoring
+4. page.on("close")
+5. Playwright health checks
+
+The system must NEVER rely on ONLY one detection method.
+
+---
+
+# PID Monitoring
+
+Store browser_pid during launch.
+
+Use:
+
+* psutil.pid_exists(pid)
+
+If PID dies:
+
+* cleanup runtime
+* unlock profile
+* deactivate runtime
+* cleanup ownership
+
+PID monitoring is SECONDARY validation.
+Heartbeat remains PRIMARY.
+
+---
+
+# Extension WebSocket Rules
+
+Extension websocket connections must:
+
+* identify profile_id
+* identify runtime_session_id
+* validate ownership
+* reject stale reconnects
+* prevent duplicate ownership
+
+Reconnect logic must:
+
+* reconnect safely
+* stop heartbeat on disconnect
+* reject stale ownership
+* cleanup abandoned websocket ownership
+
+Infinite "Reconnecting..." states must NEVER happen.
+
+---
+
+# Frontend Synchronization Rules
+
+Frontend must NEVER assume:
+launch clicked = active
+
+Frontend state must ONLY come from backend runtime state.
+
+Allowed states:
+
+* launching
+* browser_started
+* playwright_connected
+* extension_connected
+* active
+* reconnecting
+* disconnected
+* inactive
+* crashed
+
+Frontend updates must happen using:
+
 * websocket updates
-* realtime user experience
+  OR
+* polling fallback
+
+Frontend must auto-update on:
+
+* heartbeat timeout
+* browser disconnect
+* runtime cleanup
+* Playwright disconnect
+* stale ownership cleanup
 
 ---
 
-# Current Main Services
+# Modular Monolith Philosophy
 
-## 1. campaigns
+The system currently follows:
 
-Purpose:
+* modular monolith architecture
+* internal service separation
+* queue-driven processing
+* isolated workers
+* scalable foundations
+
+This is NOT full microservices yet.
+
+Avoid premature overengineering.
+
+---
+
+# Core Apps
+
+## campaigns
+
+Responsibilities:
 
 * bulk sending
-* campaign scheduling
+* scheduling
 * retries
-* batch processing
-* future campaign workers
+* batching
+* queue orchestration
 
 Rules:
 
-* campaigns must never block incoming processing
-* campaign sending must use queues
-* retries must remain isolated
-* sending logic should remain service-based
+* campaigns must NEVER block incoming processing
+* retries remain isolated
+* sending logic must remain service-based
 
 ---
 
-## 2. autoreply
+## autoreply
 
-Purpose:
+Responsibilities:
 
 * incoming message processing
 * AI/context replies
-* intent detection
-* multilingual replies
-* conversation handling
+* multilingual support
+* intent handling
+* conversation management
 
 Rules:
 
 * incoming processing has highest priority
-* autoreply logic should remain isolated
-* heavy AI processing should move to tasks/services
-* responses should be context-aware
+* AI logic must remain isolated
+* heavy processing must move to tasks/services
 
 ---
 
-## 3. websocket
+## messaging
 
-Purpose:
+Responsibilities:
 
-* realtime dashboard events
-* live message updates
-* realtime UI synchronization
-
-Rules:
-
-* websocket consumers must stay lightweight
-* consumers should NEVER process heavy business logic
-* consumers should only:
-
-  * validate data
-  * emit events
-  * queue background tasks
-
----
-
-## 4. messaging
-
-Purpose:
-
-* centralized message handling
-* message sending abstraction
-* sender orchestration
+* centralized sending abstraction
 * delivery tracking
+* sender orchestration
+* ACK synchronization
+* retry management
 
 Rules:
 
-* sending logic must remain reusable
 * avoid duplicate sending code
-* future queue integration should happen here
+* sending logic must remain reusable
+* queue integration belongs here
 
 ---
 
-## 5. contacts
+## websocket
 
-Purpose:
+Responsibilities:
+
+* realtime dashboard updates
+* runtime synchronization
+* profile state updates
+* live event streaming
+
+Consumers must NEVER:
+
+* run heavy logic
+* run AI processing
+* execute blocking operations
+* process campaigns directly
+
+Consumers should ONLY:
+
+* validate
+* emit events
+* enqueue tasks
+
+---
+
+## contacts
+
+Responsibilities:
 
 * contact management
-* lead storage
-* contact metadata
-* segmentation support
-
----
-
-# Folder Structure Rules
-
-Preferred structure:
-
-project/
-├── apps/
-│   ├── campaigns/
-│   ├── autoreply/
-│   ├── messaging/
-│   ├── websocket/
-│   ├── contacts/
-│
-├── shared/
-│   ├── utils/
-│   ├── services/
-│   ├── constants/
-│   ├── logging/
-│   ├── exceptions/
-│   └── helpers/
-│
-├── docs/
-├── scripts/
-├── logs/
-└── config/
-
----
-
-# Shared Layer Philosophy
-
-Shared folder should contain:
-
-* reusable utilities
-* common services
-* logging helpers
-* constants
-* validators
-* helper functions
-
-Shared folder should NOT contain:
-
-* campaign-specific logic
-* autoreply-specific business logic
-* websocket-specific implementations
-
----
-
-# Business Logic Rules
-
-Business logic must NOT live inside:
-
-* websocket consumers
-* Django views
-* API endpoints
-* serializers
-
-Instead:
-
-* use services
-* use handlers
-* use background tasks
-
-Correct pattern:
-
-request/event
-→ validation
-→ queue/service
-→ processing layer
+* segmentation
+* metadata
+* lead organization
 
 ---
 
 # Queue Philosophy
 
+Queues must remain isolated.
+
 Future queues:
 
 * incoming_queue
 * campaign_queue
+* retry_queue
+* runtime_cleanup_queue
+* websocket_event_queue
 
 Rules:
 
-* incoming queue always has higher priority
-* campaigns should remain isolated
-* retries should not affect realtime processing
-* queue separation is mandatory for scalability
+* incoming processing has highest priority
+* campaigns must remain isolated
+* retries must NEVER block realtime flow
 
 ---
 
-# Celery Rules
+# Celery Philosophy
 
-Future Celery workers:
+Future workers:
 
 * incoming workers
 * campaign workers
 * retry workers
+* runtime cleanup workers
+* websocket event workers
 
 Rules:
 
-* workers must stay isolated
-* long-running tasks should be retry-safe
-* tasks should remain small and focused
-* avoid massive monolithic tasks
+* workers remain isolated
+* tasks remain retry-safe
+* tasks remain small and focused
+* avoid monolithic workers
 
 ---
 
-# Performance Rules
+# Business Logic Rules
 
-Avoid:
+Business logic must NEVER live inside:
 
-* blocking loops
-* synchronous heavy processing
-* large database operations inside consumers
-* AI processing inside websocket consumers
-* long-running HTTP requests
+* websocket consumers
+* Django views
+* serializers
+* API endpoints
 
-Prefer:
+Correct flow:
 
-* queues
-* async-safe patterns
-* batching
-* background tasks
+request/event
+↓
+validation
+↓
+queue/service
+↓
+processing layer
 
 ---
 
-# WebSocket Rules
+# Shared Layer Rules
 
-Consumers should:
+Shared folder contains:
 
-* receive events
-* authenticate users
-* validate payloads
-* emit realtime updates
-* trigger tasks
+* reusable services
+* logging
+* constants
+* validators
+* helpers
+* runtime utilities
+* queue helpers
+* websocket helpers
 
-Consumers should NOT:
+Shared layer must NOT contain:
 
-* run AI logic
-* send bulk messages
-* perform large DB operations
-* execute blocking loops
+* app-specific business logic
 
 ---
 
@@ -290,31 +614,81 @@ Current stage:
 
 Future scaling:
 
+* Redis caching
 * read/write optimization
-* caching layer
 * query optimization
+* connection pooling
 
 Rules:
 
+* avoid N+1 queries
+* use indexes correctly
 * avoid unnecessary queries
-* use indexes properly
-* avoid N+1 query patterns
 * keep models modular
+
+---
+
+# Runtime Cleanup Watcher
+
+Watcher interval:
+
+* every 10 seconds
+
+Responsibilities:
+
+* heartbeat timeout cleanup
+* dead PID cleanup
+* stale runtime cleanup
+* orphan cleanup
+* reconnect validation
+* abandoned profile unlock
+
+The watcher must survive:
+
+* backend restart
+* websocket restart
+* Playwright crash
+* stale ownership
+
+---
+
+# Concurrency Rules
+
+All profile locks must be:
+
+* atomic
+* transaction-safe
+* race-condition protected
+
+Use:
+
+* database transactions
+* select_for_update
+* runtime_session_id validation
+
+Prevent:
+
+* duplicate launches
+* duplicate websocket ownership
+* duplicate Playwright ownership
+* stale runtime overwrite
 
 ---
 
 # Logging Rules
 
-All important operations should log:
+All critical operations must log:
 
-* incoming messages
-* campaign events
-* retries
-* failures
+* launches
+* disconnects
+* heartbeat failures
 * websocket connections
-* queue processing
+* retries
+* cleanup operations
+* runtime ownership changes
+* stale cleanup events
 
-Logging should remain centralized.
+Logging must remain centralized.
 
 ---
 
@@ -322,121 +696,74 @@ Logging should remain centralized.
 
 Never silently fail.
 
-All failures should:
+All failures must:
 
 * log properly
-* return controlled errors
-* support retries where needed
+* cleanup safely
+* release ownership safely
+* support retries when needed
 
 Critical systems:
 
+* runtime management
+* messaging
 * campaigns
 * incoming processing
-* sending pipeline
 
 must remain fault-tolerant.
 
 ---
 
-# Scalability Vision
+# Operational Rules
 
-Current stage:
+NEVER:
 
-* modular monolith
+* trust frontend state
+* mark active before heartbeat
+* allow duplicate launches
+* allow stale reconnect ownership
+* run blocking operations in websocket consumers
 
-Future direction:
+ALWAYS:
 
-* Redis queues
-* Celery workers
-* isolated services
-* separate VPS deployment
-* dedicated campaign workers
-* dedicated incoming workers
-
-Architecture must remain migration-friendly.
-
----
-
-# Development Philosophy
-
-Prioritize:
-
-1. stability
-2. clean structure
-3. maintainability
-4. separation
-5. scalability
-
-Do NOT overengineer early.
-
-Avoid:
-
-* premature microservices
-* unnecessary abstractions
-* complex infrastructure too early
+* verify heartbeat
+* validate ownership
+* cleanup stale runtimes
+* enforce profile locking
+* attach Playwright disconnect listeners
+* isolate heavy processing into workers/tasks
 
 ---
 
-# Code Style Rules
+# Long-Term Vision
 
-* keep functions small
-* use clear naming
-* avoid deeply nested logic
-* avoid duplicate code
-* keep services modular
-* prefer readability over cleverness
-
----
-
-# AI/Autoreply Philosophy
-
-Auto replies must:
-
-* support multilingual conversations
-* remain context-aware
-* support intent-based responses
-* support future LLM integration
-* remain isolated from campaign processing
-
----
-
-# Session Management Philosophy
-
-WhatsApp session handling should remain:
-
-* isolated
-* stable
-* reconnect-safe
-* queue-controlled
-
-Avoid uncontrolled concurrent actions on same session.
-
----
-
-# Important Long-Term Goal
-
-The platform should eventually support:
+This platform should eventually support:
 
 * multiple simultaneous campaigns
-* realtime incoming processing
+* distributed runtime orchestration
 * isolated workers
+* realtime incoming processing
 * horizontal scaling
-* distributed deployment
-* production-grade reliability
+* multi-server deployments
+* dedicated runtime orchestration services
+* scalable Playwright browser infrastructure
 
-without blocking or crashing core systems.
+without blocking or crashing critical systems.
 
 ---
 
-# Current Immediate Goal
+# Immediate Development Goal
 
-Focus only on:
+Focus ONLY on:
 
+* stable runtime orchestration
 * clean modular structure
+* heartbeat synchronization
+* profile locking correctness
 * queue-ready architecture
-* separation between campaigns and autoreply
-* stable realtime processing
+* realtime synchronization
+* stale runtime prevention
+* scalable foundations
 
-Do NOT prematurely optimize for enterprise scale.
-
-Build foundations first.
+Build stable foundations first.
+Do NOT prematurely optimize for enterprise-scale microservices.

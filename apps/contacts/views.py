@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -38,17 +40,38 @@ class ContactViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def bulk_import(self, request):
-        """Import multiple contacts in one request."""
+        """Import multiple contacts in one request.
+
+        Accepts either:
+          - JSON array of objects: [{"name": "...", "phone_number": "..."}, ...]
+          - Objects with phone_number only (name defaults to the number)
+
+        Phone normalization applied to all entries:
+          - Strips spaces, dashes, parentheses, leading +
+          - 10-digit Indian mobiles (starting 6-9) → prepend 91
+          - 11-digit numbers starting with 0 → replace leading 0 with 91
+        """
         serializer = BulkContactSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         created, skipped = [], []
         for entry in serializer.validated_data["contacts"]:
-            phone = entry.get("phone_number", "").strip()
-            name = entry.get("name", "").strip()
-            if not phone or not name:
-                skipped.append({"entry": entry, "reason": "missing name or phone_number"})
+            raw_phone = str(entry.get("phone_number") or "").strip()
+            raw_name = str(entry.get("name") or "").strip()
+
+            digits = re.sub(r"\D", "", raw_phone)
+            if len(digits) == 10 and digits[0] in "6789":
+                digits = "91" + digits
+            elif len(digits) == 11 and digits.startswith("0"):
+                digits = "91" + digits[1:]
+
+            if len(digits) < 7:
+                skipped.append({"entry": entry, "reason": "invalid phone number"})
                 continue
+
+            phone = digits
+            name = raw_name or phone
+
             obj, was_created = Contact.objects.get_or_create(
                 owner=request.user,
                 phone_number=phone,

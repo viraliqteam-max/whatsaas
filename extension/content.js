@@ -19,7 +19,7 @@ function connectKeepAlive() {
     });
     setInterval(() => {
       try { _keepAlivePort.postMessage({ type: 'heartbeat' }); } catch (_) {}
-    }, 20000);
+    }, 5000);
   } catch (_) {}
 }
 
@@ -84,6 +84,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ phone: _findPhoneByName(msg.sender_name) });
     return;
   }
+  if (msg.type === 'GET_PROFILE_HEALTH') {
+    sendResponse(_getProfileHealth());
+    return;
+  }
+  if (msg.type === 'GET_ACTIVE_JID') {
+    sendResponse({ jid: _activeChatJid() });
+    return true;
+  }
+  if (msg.type === 'GET_LATEST_OUTGOING') {
+    const latest = _latestOutgoingMessageText();
+    const found = _messageTextMatches(latest, msg.message || '');
+    if (found) console.log('[ExistingBubbleDetected] jid=%s — outgoing bubble matches pending send', msg.jid || '');
+    sendResponse({ found, latest: latest.slice(0, 80) });
+    return true;
+  }
   if (msg.type === 'SEND_BY_JID') {
     console.log('[Agent] Content task received - SEND_BY_JID jid=%s task=%s', msg.jid || '', msg.task_id || '');
     sendByJid(msg.jid, msg.message)
@@ -91,7 +106,53 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch(e => sendResponse({ success: false, error: e.message }));
     return true;
   }
+  if (msg.type === 'SUPPRESS_INCOMING_JID') {
+    const jid = msg.jid || '';
+    const ttl = msg.ttl || 300000;
+    if (jid) {
+      _suppressedJids.set(jid, Date.now() + ttl);
+      console.log('[SuppressIncoming] jid=%s ttl=%dms — suppressing incoming pipeline for send target', jid, ttl);
+    }
+    sendResponse({ ok: true });
+    return true;
+  }
 });
+
+function _isWhatsAppReady() {
+  return _getProfileHealth().whatsapp_ready;
+}
+
+function _getProfileHealth() {
+  const hasSidebar = !!(
+    document.querySelector('#pane-side') ||
+    document.querySelector('[aria-label="Chat list"]') ||
+    document.querySelector('[aria-label="Chats"]') ||
+    document.querySelector('[data-testid="chatlist"]')
+  );
+  const qrScreen = !!document.querySelector('[data-testid="qrcode"], canvas[aria-label*="Scan"], div[data-ref]');
+  const loadingScreen = !!document.querySelector('[data-testid="startup-screen"], progress, [aria-label*="Loading"]');
+  const disconnected = /computer not connected|phone not connected|trying to reach phone|connecting/i.test(document.body.innerText || '');
+  const whatsappReady = hasSidebar && !qrScreen && !loadingScreen && !disconnected;
+  const waState = qrScreen ? 'qr_required' :
+    loadingScreen ? 'loading' :
+    disconnected ? 'disconnected' :
+    hasSidebar ? 'ready' :
+    'dom_not_ready';
+  if (waState === 'ready') {
+    console.log('[SessionHealthy] wa_state=ready active_chat=%s', _activeChatName() || '');
+  } else if (waState === 'qr_required') {
+    console.log('[SessionDead] wa_state=qr_required — session needs QR rescan');
+  } else {
+    console.log('[SessionRecovering] wa_state=%s', waState);
+  }
+  return {
+    whatsapp_ready: whatsappReady,
+    active_chat: _activeChatName(),
+    url: location.href,
+    content_script_ready: true,
+    wa_state: waState,
+  };
+}
 
 function _normaliseMessageText(text) {
   return String(text || '').replace(/\s+/g, ' ').trim();
@@ -193,6 +254,15 @@ async function clickSendButton(expectedMessage) {
         contEl.click();
         interstitialDone = true;
         await sleep(4000); // wait for WA to open the actual chat after interstitial
+        // Newer WhatsApp Web auto-sends the ?text= pre-fill when the interstitial
+        // button is clicked. Check for that before resuming the send-button loop.
+        if (expectedMessage) {
+          const alreadySent = await _verifyOutgoingMessage(expectedMessage, 3000);
+          if (alreadySent) {
+            console.log('[Agent] Interstitial auto-sent message verified — returning success');
+            return { success: true, status: 'sent', error: null };
+          }
+        }
         continue;
       }
     }
@@ -416,11 +486,26 @@ function scanUnreadChats() {
       }
     }
 
-    if (results.length > 0) {
-      console.log('[Scanner] Resolved chats:', results.length, '—',
-        results.map(r => r.sender_name + (r.sender_phone ? '(' + r.sender_phone + ')' : '') + ' src=' + r.source).join(' | '));
+    // Filter out JIDs that are suppressed because a send task is actively targeting them.
+    // This prevents outgoing campaign sends from re-entering the auto-reply pipeline.
+    const now = Date.now();
+    const filtered = results.filter(r => {
+      const rjid = r.jid || '';
+      if (!rjid) return true;
+      const exp = _suppressedJids.get(rjid);
+      if (exp && now < exp) {
+        console.log('[Scanner] Suppressed jid=%s sender=%s — filtered: active send target', rjid, r.sender_name || '');
+        return false;
+      }
+      if (exp) _suppressedJids.delete(rjid);
+      return true;
+    });
+
+    if (filtered.length > 0) {
+      console.log('[Scanner] Resolved chats:', filtered.length, '—',
+        filtered.map(r => r.sender_name + (r.sender_phone ? '(' + r.sender_phone + ')' : '') + ' src=' + r.source).join(' | '));
     }
-    return results;
+    return filtered;
   } catch (e) {
     console.log('[Scanner] scanUnreadChats error:', e.message);
     _debug('sidebar_scan_error', { error: e.message });
@@ -433,9 +518,12 @@ function _cleanChatLabel(label) {
 }
 
 function _isBadChatName(name) {
-  return /^(archived|archive)$/i.test(name)
-      || /unread|message|notification/i.test(name)
-      || (/[\u0900-\u097F]/.test(name) && /\d+/.test(name));
+  if (/^(archived|archive)$/i.test(name)) return true;
+  if (/unread|message|notification/i.test(name)) return true;
+  // Filter UI count labels like "5 \u0938\u0902\u0926\u0947\u0936" (digits + only script chars) but NOT
+  // real Hindi contact names that legitimately contain digits (e.g. "Ramesh 9").
+  if (/^\d+\s*[\u0900-\u097F]+$/.test(name)) return true;
+  return false;
 }
 
 function _sidebarRows() {
@@ -625,6 +713,214 @@ function _normalizeJid(value) {
   return match ? `${match[1]}@${match[2]}` : '';
 }
 
+// Extract JID from the current WhatsApp Web URL.
+// After navigating to a chat (deep-link or SPA routing) the URL often contains
+// the phone number or JID — this is the most reliable source for business chats
+// whose sidebar rows lack a data-id attribute.
+function _extractJidFromUrl() {
+  const href = location.href || '';
+  // Deep-link: /send?phone=919812345678  or  &phone=...
+  const phoneMatch = href.match(/[?&]phone=(\d{7,20})/);
+  if (phoneMatch) return phoneMatch[1] + '@c.us';
+  // SPA hash / internal routing sometimes embeds the full JID
+  const jidMatch = href.match(/((?:\d{7,20}|120363\d{5,})@(?:c\.us|g\.us))/);
+  if (jidMatch) return jidMatch[1];
+  return '';
+}
+
+// ── React Fiber / WA Internal Store Extraction ────────────────────────────────
+// These functions extract stable chat identifiers from WhatsApp's internal
+// React component tree and webpack module cache.  More reliable than DOM-only
+// scraping because they survive sidebar DOM changes and WA Web updates.
+
+/**
+ * Walk the React fiber tree rooted at `element` and return the first
+ * WhatsApp JID found in any component's memoized props.
+ */
+function _jidFromFiber(element) {
+  if (!element) return '';
+  try {
+    const fiberKey = Object.keys(element).find(k =>
+      k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance')
+    );
+    if (!fiberKey) return '';
+    let fiber = element[fiberKey];
+    let depth = 0;
+    while (fiber && depth++ < 200) {
+      try {
+        const props = fiber.memoizedProps || fiber.pendingProps || {};
+        // WA Chat model: props.chat.id._serialized / props.model.id._serialized
+        const chatObj = props.chat || props.model || props.contact || props.conversation;
+        if (chatObj && chatObj.id && chatObj.id._serialized) {
+          const s = chatObj.id._serialized;
+          if (/@(c\.us|g\.us)$/.test(s)) return s;
+        }
+        // Some components pass jid/wid directly
+        const rawJid = props.jid || props.wid;
+        if (rawJid) {
+          const s = typeof rawJid === 'object' ? (rawJid._serialized || '') : String(rawJid);
+          if (s && /@(c\.us|g\.us)$/.test(s)) return s;
+        }
+      } catch (_) {}
+      fiber = fiber.return;
+    }
+  } catch (_) {}
+  return '';
+}
+
+/**
+ * Scan WhatsApp's webpack module cache for the active Chat model.
+ * WA Web uses Webpack 5 (webpackChunkwhatsapp_web_client) since 2022.
+ * Returns the Chat model object with .id._serialized, .name, .pushname, etc.
+ */
+function _getActiveChatFromWAStore() {
+  try {
+    const chunkArr = window.webpackChunkwhatsapp_web_client;
+    if (!chunkArr || !Array.isArray(chunkArr)) return null;
+
+    // Find the webpack require function from chunk runtime entries
+    let requireFn = null;
+    for (let i = chunkArr.length - 1; i >= 0; i--) {
+      const chunk = chunkArr[i];
+      if (chunk && typeof chunk[2] === 'function') { requireFn = chunk[2]; break; }
+    }
+    if (!requireFn || !requireFn.c) return null;
+
+    const modCache = requireFn.c;
+    for (const id in modCache) {
+      try {
+        const exp = modCache[id] && modCache[id].exports;
+        if (!exp) continue;
+        // Check module and common sub-exports for a store with getActive()
+        for (const cand of [exp, exp.default, exp.Chat, exp.store, exp.Store]) {
+          if (!cand || (typeof cand !== 'object' && typeof cand !== 'function')) continue;
+          if (typeof cand.getActive === 'function') {
+            const a = cand.getActive();
+            if (a && a.id && a.id._serialized) return a;
+          }
+          if (cand.active && cand.active.id && cand.active.id._serialized) return cand.active;
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+  return null;
+}
+
+/**
+ * Find the latest incoming message's data-id attribute in the open chat pane.
+ * This is the stable WhatsApp message identifier (not DOM-generated).
+ */
+function _extractLatestMessageMeta() {
+  const main = document.querySelector('#main');
+  if (!main) return { msgId: '', datasetId: '' };
+  const els = Array.from(main.querySelectorAll('[data-id]')).filter(el => {
+    if (el.classList && el.classList.contains('message-out')) return false;
+    if (el.closest && el.closest('.message-out')) return false;
+    return true;
+  });
+  for (let i = els.length - 1; i >= 0; i--) {
+    const id = els[i].getAttribute('data-id') || '';
+    if (id) return { msgId: id, datasetId: els[i].id || id };
+  }
+  return { msgId: '', datasetId: '' };
+}
+
+/**
+ * Extract comprehensive stable metadata from the currently open chat.
+ * Tries strategies in order: URL → React fiber → WA webpack store → DOM data-id.
+ * Returns { jid, serialized_id, phone, pushname, chat_type, message_id, dataset_id,
+ *           extraction_method, hydrated }.
+ */
+function _extractOpenChatMetadata() {
+  const meta = {
+    jid: '', serialized_id: '', phone: '', pushname: '', chat_type: 'private',
+    message_id: '', dataset_id: '', extraction_method: 'none', hydrated: false,
+  };
+
+  // 1. URL — most reliable after deep-link navigation
+  const urlJid = _extractJidFromUrl();
+  if (urlJid) {
+    meta.jid = urlJid; meta.serialized_id = urlJid;
+    meta.phone = urlJid.split('@')[0];
+    meta.chat_type = urlJid.includes('@g.us') ? 'group' : 'private';
+    meta.extraction_method = 'url'; meta.hydrated = true;
+  }
+
+  // 2. React fiber on #main header (works when URL has no JID after SPA nav)
+  if (!meta.jid) {
+    const header = document.querySelector('#main header');
+    if (header) {
+      const fj = _jidFromFiber(header);
+      if (fj) {
+        meta.jid = fj; meta.serialized_id = fj;
+        meta.phone = fj.split('@')[0];
+        meta.chat_type = fj.includes('@g.us') ? 'group' : 'private';
+        meta.extraction_method = 'react_fiber'; meta.hydrated = true;
+      }
+    }
+  }
+
+  // 3. WA internal webpack store — has pushname, isBusiness, full chat model
+  if (!meta.jid) {
+    try {
+      const chat = _getActiveChatFromWAStore();
+      if (chat && chat.id && chat.id._serialized) {
+        const s = chat.id._serialized;
+        meta.jid = s; meta.serialized_id = s;
+        meta.phone = chat.id.user || s.split('@')[0];
+        meta.pushname = (chat.pushname || chat.notifyName || chat.name || '').trim();
+        meta.chat_type = chat.id.server === 'g.us' ? 'group'
+          : (chat.isBusiness ? 'business' : 'private');
+        meta.extraction_method = 'react_store'; meta.hydrated = true;
+      }
+    } catch (_) {}
+  }
+
+  // 4. DOM data-id on message elements (fallback when store unavailable)
+  if (!meta.jid) {
+    const main = document.querySelector('#main');
+    if (main) {
+      const dj = _extractJid(main);
+      if (dj) {
+        meta.jid = dj; meta.serialized_id = dj;
+        meta.phone = dj.split('@')[0];
+        meta.chat_type = dj.includes('@g.us') ? 'group' : 'private';
+        meta.extraction_method = 'dom_data_id'; meta.hydrated = true;
+      }
+    }
+  }
+
+  // Always extract message dataset ID (independent of which JID strategy succeeded)
+  const mm = _extractLatestMessageMeta();
+  meta.message_id = mm.msgId;
+  meta.dataset_id = mm.datasetId;
+
+  return meta;
+}
+
+// Wait until the conversation pane has loaded (header title OR a message with data-id).
+// Returns true if the conversation loaded within timeoutMs, false if it timed out.
+function _waitForConversationLoad(timeoutMs) {
+  return new Promise(resolve => {
+    const deadline = Date.now() + (timeoutMs || 5000);
+    function check() {
+      const main = document.querySelector('#main');
+      if (main) {
+        const hasHeader = main.querySelector(
+          'header span[title], ' +
+          'header [data-testid="conversation-info-header-chat-title"], ' +
+          'header span[dir="auto"]'
+        );
+        const hasMsg = main.querySelector('[data-id*="@c.us"], [data-id*="@g.us"]');
+        if (hasHeader || hasMsg) { resolve(true); return; }
+      }
+      if (Date.now() >= deadline) { resolve(false); return; }
+      setTimeout(check, 350);
+    }
+    check();
+  });
+}
+
 function _findChatRowByJid(jid) {
   jid = _normalizeJid(jid);
   if (!jid) return null;
@@ -664,6 +960,7 @@ async function sendByJid(jid, message) {
       'div[contenteditable="true"][spellcheck="true"]',
     ], 8000);
     if (!composebox) {
+      console.warn('[InputBoxMissing] jid=%s attempt=%d — compose box not found', jid, attempt);
       if (attempt < 3) { await sleep(1000); continue; }
       return { success: false, status: 'dom_not_loaded', error: `Compose box not found for JID: ${jid}` };
     }
@@ -753,6 +1050,12 @@ function _activeChatName() {
 }
 
 function _activeChatJid() {
+  // 1. URL is the most reliable source after deep-link or SPA navigation
+  const urlJid = _extractJidFromUrl();
+  if (urlJid) return urlJid;
+
+  // 2. Scan #main descendants — message data-id attributes contain the JID
+  //    (only available once at least one message has rendered)
   const main = document.querySelector('#main');
   if (!main) return '';
   return _extractJid(main);
@@ -766,6 +1069,21 @@ function _activeChatJid() {
 
 let _lastSidebarDebugAt = 0;
 let _badgeRetryTimer = null;
+
+// JIDs suppressed from incoming processing because a send task is actively targeting them.
+// background.js sends SUPPRESS_INCOMING_JID before opening a chat; expiry is timestamp ms.
+const _suppressedJids = new Map(); // jid → expiry_ms
+
+// ── Active conversation reconciliation cache ──────────────────────────────────
+// Prevents re-forwarding the same message every 20 s while it sits in an open chat.
+const _processedMsgCache = new Map(); // hashKey → timestamp
+
+function _pruneProcessedCache() {
+  if (_processedMsgCache.size > 200) {
+    const toDelete = Array.from(_processedMsgCache.keys()).slice(0, 50);
+    toDelete.forEach(k => _processedMsgCache.delete(k));
+  }
+}
 
 function _isPlaceholderPreview(preview) {
   const text = (preview || '').trim().toLowerCase();
@@ -806,45 +1124,104 @@ function _latestIncomingTextFromActiveChat() {
 }
 
 async function _openUnreadChatAndExtract(msg) {
-  const key = msg.jid || msg.sender_phone || msg.sender_name || '';
   const row = (msg.jid && _findChatRowByJid(msg.jid))
            || _findChatRow((msg.sender_name || '').toLowerCase());
   if (!row) {
-    console.log('[Scanner] Open chat skipped - row not found for', key);
     _debug('unread_open_skipped', { reason: 'row_not_found', jid: msg.jid || '', sender: msg.sender_name || '' });
     return msg;
   }
 
-  console.log('[Scanner] Open chat attempt - jid=%s sender=%s preview=%s',
-              msg.jid || '', msg.sender_name || '', msg.preview || '');
+  console.log('[OpenChat] attempt - jid=%s sender=%s', msg.jid || '', msg.sender_name || '');
   _debug('unread_open_attempt', { jid: msg.jid || '', sender: msg.sender_name || '', source: msg.source || '' });
   row.click();
-  await sleep(1800);
 
-  const activeName = _activeChatName();
-  const activeJid = _activeChatJid();
-  const incomingText = _latestIncomingTextFromActiveChat();
-  if (!incomingText) {
-    console.log('[Scanner] Open chat loaded but no incoming text extracted - jid=%s active=%s',
-                msg.jid || activeJid || '', activeName || '');
-    _debug('unread_extract_empty', { jid: msg.jid || activeJid || '', sender: msg.sender_name || '', active_chat: activeName || '' });
+  // Retry up to 3 times, waiting for the conversation pane to render each time.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const loaded = await _waitForConversationLoad(attempt === 1 ? 5000 : 3000);
+    const activeName = _activeChatName();
+    const incoming   = _latestIncomingTextFromActiveChat();
+
+    // Use multi-strategy extraction: URL → React fiber → WA store → DOM data-id
+    const chatMeta = _extractOpenChatMetadata();
+    const activeJid = chatMeta.jid;
+
+    console.log('[ChatLoaded] attempt=%d loaded=%s jid=%s method=%s name=%s text=%s',
+                attempt, loaded, activeJid || '', chatMeta.extraction_method,
+                activeName || '', (incoming || '').slice(0, 40));
+
+    if (activeJid && incoming) {
+      // Full success: JID + incoming text both extracted
+      console.log('[JIDExtracted] jid=%s method=%s sender=%s',
+                  activeJid, chatMeta.extraction_method, msg.sender_name || activeName || '');
+      _debug('unread_extract_success', {
+        jid: activeJid,
+        method: chatMeta.extraction_method,
+        sender: activeName || msg.sender_name,
+        preview: incoming.slice(0, 80),
+      });
+      return {
+        ...msg,
+        sender_name: msg.sender_name || activeName,
+        sender_phone: msg.sender_phone || chatMeta.phone || '',
+        jid: activeJid,
+        preview: incoming,
+        source: (msg.source || 'sidebar') + '_opened',
+        // Stable identifier fields
+        serialized_id: chatMeta.serialized_id || activeJid,
+        pushname: chatMeta.pushname || '',
+        chat_type: chatMeta.chat_type || 'private',
+        message_id: chatMeta.message_id || '',
+        dataset_id: chatMeta.dataset_id || '',
+        extraction_method: chatMeta.extraction_method,
+        hydrated: chatMeta.hydrated,
+        chat_opened: true,
+      };
+    }
+
+    if (attempt < 3) continue;
+
+    // Final attempt — partial success: JID found but no incoming text
+    // (media message, template, or empty conversation). Keep sidebar preview.
+    if (activeJid) {
+      console.log('[JIDExtracted] partial - jid=%s method=%s sender=%s no_text',
+                  activeJid, chatMeta.extraction_method, msg.sender_name || activeName || '');
+      _debug('unread_extract_partial', {
+        reason: 'no_incoming_text',
+        jid: activeJid,
+        method: chatMeta.extraction_method,
+        sender: activeName || msg.sender_name,
+      });
+      return {
+        ...msg,
+        sender_name: msg.sender_name || activeName,
+        sender_phone: msg.sender_phone || chatMeta.phone || '',
+        jid: activeJid,
+        preview: msg.preview || '',
+        source: (msg.source || 'sidebar') + '_opened_partial',
+        serialized_id: chatMeta.serialized_id || activeJid,
+        pushname: chatMeta.pushname || '',
+        chat_type: chatMeta.chat_type || 'private',
+        message_id: chatMeta.message_id || '',
+        dataset_id: chatMeta.dataset_id || '',
+        extraction_method: chatMeta.extraction_method,
+        hydrated: chatMeta.hydrated,
+        chat_opened: true,
+      };
+    }
+
+    // Complete failure: could not determine JID after 3 attempts
+    const reason = !loaded ? 'chat_load_timeout' : 'jid_missing';
+    console.log('[OpenChat] failed - reason=%s sender=%s active=%s', reason, msg.sender_name || '', activeName || '');
+    _debug('unread_extract_empty', {
+      reason,
+      jid: msg.jid || '',
+      sender: msg.sender_name || '',
+      active_chat: activeName || '',
+    });
     return msg;
   }
 
-  console.log('[Scanner] Incoming extracted - jid=%s sender=%s text=%s',
-              msg.jid || activeJid || '', msg.sender_name || activeName || '', incomingText.slice(0, 80));
-  _debug('unread_extract_success', {
-    jid: msg.jid || activeJid || '',
-    sender: msg.sender_name || activeName || '',
-    preview: incomingText.slice(0, 80),
-  });
-  return {
-    ...msg,
-    sender_name: msg.sender_name || activeName,
-    jid: msg.jid || activeJid,
-    preview: incomingText,
-    source: (msg.source || 'sidebar') + '_opened',
-  };
+  return msg;
 }
 
 async function _enrichUnreadMessages(messages) {
@@ -856,7 +1233,14 @@ async function _enrichUnreadMessages(messages) {
       enriched.push(msg);
     }
   }
-  return enriched.filter(msg => !_isPlaceholderPreview(msg.preview));
+  // Keep messages that have a validated JID even with no extractable text
+  // (media messages, business templates).  Messages without a JID still require
+  // a non-placeholder preview so the backend can generate a contextual reply.
+  return enriched.filter(msg => {
+    const jid = _normalizeJid(msg.jid || '');
+    if (jid) return true;                        // valid JID — always forward
+    return !_isPlaceholderPreview(msg.preview);  // no JID — need preview
+  });
 }
 
 async function _scanVirtualizedUnreadChats(reason) {
@@ -894,7 +1278,12 @@ async function _scanVirtualizedUnreadChats(reason) {
 async function _scanSidebarAndForward(reason) {
   let messages = scanUnreadChats();
   if (messages.length === 0 && reason !== 'mutation') {
-    messages = await _scanVirtualizedUnreadChats(reason);
+    const fallback = await _scanVirtualizedUnreadChats(reason);
+    if (fallback.length > 0) {
+      console.log('[FallbackScanRecovered] reason=%s found=%d — virtualized scroll recovered missed chats',
+                  reason, fallback.length);
+    }
+    messages = fallback;
   }
   const rows = _sidebarRows();
   const now = Date.now();
@@ -903,9 +1292,11 @@ async function _scanSidebarAndForward(reason) {
   ).length;
 
   // Always log to console so DevTools shows every scan tick
+  console.log('[UnreadScan] reason=%s badges=%d rows=%d resolved=%d', reason, badgeEls, rows.length, messages.length);
   console.log('[Scanner] scan(' + reason + ') badges=' + badgeEls + ' rows=' + rows.length + ' resolved=' + messages.length);
 
   if (badgeEls > 0 && messages.length === 0) {
+    console.log('[UnreadMissing] badges=%d reason=%s — badges visible but no chats resolved', badgeEls, reason);
     console.log('[Scanner] WARN: badges visible but no chats resolved — check name extraction above');
   }
 
@@ -926,6 +1317,9 @@ async function _scanSidebarAndForward(reason) {
   }
 
   if (messages.length > 0) {
+    console.log('[UnreadRecovered] count=%d reason=%s senders=%s',
+                messages.length, reason,
+                messages.map(m => m.sender_name || m.jid || '?').join(','));
     _sendToBackground(messages);
     clearTimeout(_badgeRetryTimer);
     _badgeRetryTimer = null;
@@ -940,6 +1334,104 @@ async function _scanSidebarAndForward(reason) {
       _scanSidebarAndForward('badge_retry');
     }, 2000);
   }
+}
+
+// Returns metadata about the latest INCOMING message in the currently open chat.
+// Always re-queries the DOM to avoid stale refs from React rerenders / GoLogin restores.
+function _getLatestIncomingWithMeta() {
+  const main = document.querySelector('#main');
+  if (!main) return null;
+
+  const msgs = Array.from(main.querySelectorAll(
+    '.message-in, [data-testid="msg-container"]'
+  )).filter(el => {
+    if (el.classList && el.classList.contains('message-out')) return false;
+    if (el.closest && el.closest('.message-out')) return false;
+    return true;
+  });
+
+  if (!msgs.length) return null;
+
+  const last = msgs[msgs.length - 1];
+  const idEl = last.getAttribute('data-id')
+    ? last
+    : (last.closest ? last.closest('[data-id]') : null);
+  const msgId = idEl ? (idEl.getAttribute('data-id') || '') : '';
+
+  const textEl = last.querySelector('.selectable-text, span.selectable-text, [data-pre-plain-text]');
+  const raw = (textEl ? textEl.innerText || textEl.textContent : last.innerText || last.textContent || '').trim();
+  const lines = raw.split('\n').map(x => x.trim()).filter(Boolean);
+  const text = lines.find(x =>
+    x.length > 1 &&
+    x.length < 1000 &&
+    !/^\d{1,2}:\d{2}\s*(am|pm)?$/i.test(x) &&
+    !/^(read|delivered|sent)$/i.test(x)
+  ) || '';
+
+  return { text, msgId, hasText: !!text };
+}
+
+// Poll the currently active/open conversation for unprocessed incoming messages.
+// Runs every 20 s as a fallback for chats that were already open when the observer
+// attached, or where the unread badge never fired (GoLogin restored tab, etc.).
+async function _activeConversationPoll() {
+  if (!_isWhatsAppReady()) return;
+
+  const jid = _activeChatJid();
+  if (!jid || !_normalizeJid(jid)) return;
+
+  // Skip JIDs that background.js marked as active send targets to prevent
+  // outgoing campaign opens from re-entering the incoming pipeline.
+  const _suppExp = _suppressedJids.get(jid);
+  if (_suppExp) {
+    if (Date.now() < _suppExp) {
+      console.log('[ActivePollSuppressed] jid=%s — recently sent to, skipping active poll', jid);
+      return;
+    }
+    _suppressedJids.delete(jid);
+  }
+
+  const name = _activeChatName();
+  const meta = _getLatestIncomingWithMeta();
+
+  console.log('[ActiveConversationScan] jid=%s name=%s', jid, name || '');
+
+  if (!meta) return;
+  if (!meta.hasText && !meta.msgId) return; // no extractable content
+
+  // Stable dedup key: prefer immutable message data-id; fall back to jid+text snippet
+  const hashKey = jid + ':' + (meta.msgId || meta.text.slice(0, 60));
+  if (_processedMsgCache.has(hashKey)) return;
+
+  console.log('[ActiveConversationDetected] jid=%s name=%s', jid, name || '');
+  console.log('[UnprocessedIncomingFound] jid=%s text=%s', jid, (meta.text || '').slice(0, 60));
+
+  _processedMsgCache.set(hashKey, Date.now());
+  _pruneProcessedCache();
+
+  const msg = {
+    jid,
+    sender_name: name || '',
+    sender_phone: jid.replace(/@c\.us$/, '').replace(/@g\.us$/, ''),
+    preview: meta.text || '',
+    source: 'active_conversation_poll',
+    count: 1,
+  };
+
+  // Enrich with stable identifiers from the currently open chat
+  const chatMeta = _extractOpenChatMetadata();
+  msg.serialized_id  = chatMeta.serialized_id || jid;
+  msg.pushname       = chatMeta.pushname || '';
+  msg.chat_type      = chatMeta.chat_type || 'private';
+  msg.message_id     = chatMeta.message_id || meta.msgId || '';
+  msg.dataset_id     = chatMeta.dataset_id || '';
+  msg.extraction_method = chatMeta.extraction_method || 'active_poll';
+  msg.hydrated       = chatMeta.hydrated;
+  msg.chat_opened    = false;
+
+  console.log('[ReconciliationQueue] jid=%s method=%s source=active_conversation_poll',
+              jid, msg.extraction_method);
+  _sendToBackground([msg]);
 }
 
 function _initSidebarObserver() {
@@ -989,6 +1481,12 @@ async function _initScanner() {
   setInterval(() => {
     _scanSidebarAndForward('interval');
   }, 5000);
+
+  // Active conversation reconciliation — catches messages in already-open chats
+  // where no unread badge fires (GoLogin restored session, manually opened chat,
+  // WhatsApp DOM rerender cleared the badge before observer saw it).
+  setTimeout(_activeConversationPoll, 3000);
+  setInterval(_activeConversationPoll, 20000);
 }
 
 _initScanner();

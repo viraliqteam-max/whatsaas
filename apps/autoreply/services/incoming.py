@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import random
 import re
@@ -12,6 +13,7 @@ from django.utils import timezone
 
 from apps.autoreply.services.message_filters import clean_sender_name, should_ignore_incoming_event
 from apps.sessions.models import IncomingMessage, WhatsAppSession
+from shared.services.websocket_events import emit_dashboard_event
 from shared.utils.jid import jid_from_phone, jid_to_phone, normalize_jid, validate_jid
 
 logger = logging.getLogger(__name__)
@@ -51,11 +53,19 @@ def _jid_to_phone(jid: str) -> str:
     return jid_to_phone(jid)
 
 
-def _resolve_conversation(profile, jid: str, phone: str, display_name: str):
+def _resolve_conversation(profile, jid: str, phone: str, display_name: str,
+                          chat_type: str = "", pushname: str = ""):
     """
     Get-or-create a Conversation keyed by whatsapp_jid.
-    Updates phone and display_name if they changed.
-    Returns None when neither jid nor phone is available.
+
+    Resolution priority:
+      1. whatsapp_jid (primary — stable, never changes)
+      2. phone derived from JID (fallback when no explicit phone given)
+
+    On every call the Conversation is updated with:
+      - latest phone / display_name if they changed
+      - pushname and chat_type from the extension payload
+      - last_message_at timestamp and incremented message_count
     """
     from apps.sessions.models import Conversation
 
@@ -65,26 +75,44 @@ def _resolve_conversation(profile, jid: str, phone: str, display_name: str):
     if not jid:
         return None
 
-    # Derive phone from JID when not provided separately
     if not phone:
         phone = _jid_to_phone(jid)
 
-    conversation, _ = Conversation.objects.get_or_create(
+    conversation, created = Conversation.objects.get_or_create(
         profile=profile,
         whatsapp_jid=jid,
-        defaults={"phone": phone, "display_name": display_name or ""},
+        defaults={
+            "phone": phone,
+            "display_name": display_name or "",
+            "chat_type": chat_type or "private",
+            "pushname": pushname or "",
+        },
     )
 
-    # Keep phone and name fresh without an extra save if nothing changed
+    # Build update dict — only write fields that actually changed or need refresh
     updates = {}
     if phone and conversation.phone != phone:
         updates["phone"] = phone
     if display_name and conversation.display_name != display_name:
         updates["display_name"] = display_name
-    if updates:
+    if chat_type and conversation.chat_type != chat_type:
+        updates["chat_type"] = chat_type
+    if pushname and conversation.pushname != pushname:
+        updates["pushname"] = pushname
+
+    # Always stamp last_message_at and increment counter
+    conversation.last_message_at = timezone.now()
+    conversation.message_count = (conversation.message_count or 0) + 1
+    updates["last_message_at"] = conversation.last_message_at
+    updates["message_count"] = conversation.message_count
+
+    if updates and not created:
         for attr, val in updates.items():
             setattr(conversation, attr, val)
         conversation.save(update_fields=list(updates.keys()))
+    elif created and (chat_type or pushname):
+        # defaults already set; nothing extra to save
+        pass
 
     return conversation
 
@@ -186,7 +214,8 @@ def _fire_reply(
         if schedule_token is not None and _reply_versions.get(sender_key) != schedule_token:
             _reply_pending.pop(sender_key, None)
             cache.delete(f"processing_lock:{profile_gologin_id}:{jid}")
-            logger.info("[Reply] Delayed reply cancelled - newer message arrived sender_key=%s", sender_key)
+            logger.info("[NewMessageOverride] cancelled - newer message arrived sender_key=%s profile=%s jid=%s",
+                        sender_key, profile_gologin_id, jid)
             return
         _reply_pending.pop(sender_key, None)
     cache.delete(f"processing_lock:{profile_gologin_id}:{jid}")
@@ -216,8 +245,29 @@ def _fire_reply(
             conversation_id=conversation_id,
         )
         IncomingMessage.objects.filter(id=incoming_id).update(is_processed=True)
+        emit_dashboard_event(
+            "conversation.message.ai_sent",
+            {
+                "profile_id": profile_gologin_id,
+                "conversation_id": conversation_id,
+                "message_id": log.id,
+                "jid": jid,
+                "status": "dispatched",
+            },
+            conversation_id=conversation_id,
+        )
         logger.info("[Success] Message dispatched to jid=%s after %ds delay", jid or reply_target, delay)
     except Exception as exc:
+        emit_dashboard_event(
+            "conversation.message.failed",
+            {
+                "profile_id": profile_gologin_id,
+                "conversation_id": conversation_id,
+                "jid": jid,
+                "error": str(exc),
+            },
+            conversation_id=conversation_id,
+        )
         logger.warning("[Reply] Delayed dispatch failed — target=%s jid=%s error=%s",
                        reply_target, jid, exc)
 
@@ -231,7 +281,14 @@ def process_incoming_message(
     jid: str = "",
     preview: str = "",
     count: int = 1,
-    dispatch=None,  # noqa: ARG001 — kept for API compatibility; channel layer always used
+    dispatch=None,       # noqa: ARG001 — kept for API compat; channel layer always used
+    # Stable identifier fields from enhanced extension payload
+    serialized_id: str = "",
+    pushname: str = "",
+    chat_type: str = "private",
+    message_id: str = "",
+    extraction_method: str = "",
+    extraction_metadata: dict = None,
 ) -> str:
     """
     Record an incoming message and schedule a delayed auto-reply (REPLY_DELAY_MIN–MAX s).
@@ -266,17 +323,47 @@ def process_incoming_message(
     if not jid and sender_phone:
         jid = jid_from_phone(sender_phone)
 
+    logger.info(
+        "[UnreadDetected] profile=%s sender=%s jid=%s phone=%s preview=%s",
+        session.profile.gologin_profile_id,
+        sender_name,
+        jid or "?",
+        sender_phone or "?",
+        preview[:60],
+    )
+
     if _ignore_incoming(sender_name, preview):
         return "ignored"
     if not validate_jid(jid):
         logger.warning(
-            "[Routing] Incoming rejected - missing valid jid profile=%s sender=%s phone=%s preview=%s",
+            "[JIDExtracted] failed reason=jid_missing profile=%s sender=%s phone=%s preview=%s",
             session.profile.gologin_profile_id,
             sender_name,
             sender_phone,
             preview[:60],
         )
         return "missing_jid"
+
+    logger.info(
+        "[JIDExtracted] jid=%s profile=%s sender=%s",
+        jid,
+        session.profile.gologin_profile_id,
+        sender_name,
+    )
+
+    # ── Fast message-level dedup (Redis) ──────────────────────────────────────
+    # Prevents double-scheduling when the active-conversation poll re-sends the
+    # same message every 20 s, or when sidebar scan and poll both fire for the
+    # same event. Keyed on jid+preview so it survives extension restarts.
+    if preview:
+        msg_hash = hashlib.md5(f"{jid}:{preview[:100]}".encode()).hexdigest()[:16]
+        processed_key = f"processed_message:{session.profile.gologin_profile_id}:{jid}:{msg_hash}"
+        if not cache.add(processed_key, "1", timeout=3600):
+            logger.debug(
+                "[DuplicateSkipped] profile=%s jid=%s hash=%s",
+                session.profile.gologin_profile_id, jid, msg_hash,
+            )
+            return "duplicate"
 
     # ── Dedup: same preview from same sender within the window ───────────────
     cutoff = timezone.now() - timedelta(minutes=DEDUP_WINDOW_MINUTES)
@@ -322,8 +409,18 @@ def process_incoming_message(
         jid=jid,
         phone=sender_phone,
         display_name=sender_name,
+        chat_type=chat_type or "private",
+        pushname=pushname or "",
     )
     conversation_id = conversation.id if conversation else None
+
+    logger.info(
+        "[ProfileValidated] profile=%s session=%s jid=%s conversation=%s",
+        session.profile.gologin_profile_id,
+        session.id,
+        jid,
+        conversation_id or "new",
+    )
 
     # ── Save incoming record ──────────────────────────────────────────────────
     incoming = IncomingMessage.objects.create(
@@ -335,16 +432,34 @@ def process_incoming_message(
         message_preview=preview,
         unread_count=max(int(count or 1), 1),
         received_at=timezone.now(),
+        # Stable identifier provenance
+        message_id=message_id or "",
+        extraction_method=extraction_method or "",
+        extraction_metadata=extraction_metadata or {},
     )
-    logger.info("[Incoming] From %s — jid=%s conversation=%s preview=%s",
-                sender_name, jid or "?", conversation_id, preview[:60])
+    logger.info(
+        "[IncomingStored] profile=%s jid=%s method=%s msg_id=%s conversation=%s",
+        session.profile.gologin_profile_id,
+        jid,
+        extraction_method or "none",
+        message_id or "-",
+        conversation.id if conversation else "none",
+    )
+    logger.info(
+        "[IncomingMessage] profile=%s sender=%s jid=%s conversation=%s preview=%s",
+        session.profile.gologin_profile_id,
+        sender_name,
+        jid or "?",
+        conversation_id,
+        preview[:60],
+    )
 
     # Generate reply through the lead-qualification conversation manager.
     effective_preview = _effective_preview(sender_name, preview)
     reply = ""
     if conversation:
         try:
-            from apps.autoreply.services.er import ConversationManager
+            from apps.autoreply.services.conversation_manager import ConversationManager
 
             result = ConversationManager().handle_incoming(
                 conversation=conversation,
@@ -352,21 +467,39 @@ def process_incoming_message(
                 sender_name=sender_name,
                 external_message_id=f"incoming:{incoming.id}",
             )
+            intent = result.get("intent", "unknown")
+            logger.info(
+                "[IntentDetected] profile=%s jid=%s intent=%s language=%s status=%s",
+                session.profile.gologin_profile_id,
+                jid,
+                intent,
+                result.get("language", "?"),
+                result.get("status", "?"),
+            )
             reply = result.get("reply", "") if result.get("status") == "reply" else ""
             if result.get("status") == "handoff":
+                logger.info("[HumanIntervention] handoff profile=%s jid=%s reason=%s",
+                            session.profile.gologin_profile_id, jid, result.get("reason", "handoff"))
+                logger.info("[IntentDetected] handoff profile=%s jid=%s", session.profile.gologin_profile_id, jid)
                 IncomingMessage.objects.filter(id=incoming.id).update(is_processed=True)
                 with _reply_lock:
                     _reply_pending.pop(sender_key, None)
                 cache.delete(processing_lock_key)
                 return "handoff"
             if result.get("status") == "skipped":
+                skip_reason = result.get("reason", "skipped")
+                if skip_reason in ("human_active", "ai_paused"):
+                    logger.info("[HumanIntervention] ai_paused profile=%s jid=%s reason=%s",
+                                session.profile.gologin_profile_id, jid, skip_reason)
+                logger.info("[ReplyCancelled] profile=%s jid=%s reason=%s",
+                            session.profile.gologin_profile_id, jid, skip_reason)
                 IncomingMessage.objects.filter(id=incoming.id).update(is_processed=True)
                 with _reply_lock:
                     _reply_pending.pop(sender_key, None)
                 cache.delete(processing_lock_key)
-                return result.get("reason", "skipped")
+                return skip_reason
         except Exception as exc:
-            logger.warning("[Reply] Conversation manager failed for %s: %s", sender_name, exc)
+            logger.warning("[IntentDetected] failed profile=%s jid=%s error=%s", session.profile.gologin_profile_id, jid, exc)
 
     if not reply:
         from apps.autoreply.services.ai_generator import generate_safe_fallback_reply
@@ -376,16 +509,19 @@ def process_incoming_message(
         reply = generate_safe_fallback_reply(effective_preview or preview, language=language)
 
     if not reply:
+        logger.warning("[AIQueued] failed reason=no_reply profile=%s jid=%s", session.profile.gologin_profile_id, jid)
         with _reply_lock:
             _reply_pending.pop(sender_key, None)
         cache.delete(processing_lock_key)
         return "no_reply"
 
+    logger.info("[AIQueued] profile=%s jid=%s reply_len=%d", session.profile.gologin_profile_id, jid, len(reply))
+
     # ── Resolve send target — jid/phone always preferred over name ────────────
     phone = jid_to_phone(jid)
     reply_target = jid
     if not validate_jid(jid):
-        logger.info("[Reply] No valid jid for %s - skip", sender_name)
+        logger.warning("[AIQueued] failed reason=no_target profile=%s sender=%s jid=%s", session.profile.gologin_profile_id, sender_name, jid)
         with _reply_lock:
             _reply_pending.pop(sender_key, None)
         cache.delete(processing_lock_key)
@@ -395,8 +531,10 @@ def process_incoming_message(
     delay = random.randint(REPLY_DELAY_MIN, REPLY_DELAY_MAX)
     profile_gologin_id = session.profile.gologin_profile_id
 
-    logger.info("[Reply] Scheduling - profile=%s target=%s phone=%s conversation=%s mode=%s delay=%ds",
-                profile_gologin_id, reply_target, phone or "?", conversation_id, mode, delay)
+    logger.info(
+        "[Schedule] profile=%s jid=%s phone=%s conversation=%s delay=%ds",
+        profile_gologin_id, reply_target, phone or "?", conversation_id, delay,
+    )
 
     threading.Thread(
         target=_fire_reply,

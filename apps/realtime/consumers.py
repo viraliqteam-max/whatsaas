@@ -15,9 +15,40 @@ import re
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from django.utils import timezone
+from apps.realtime.registry import (
+    get_remote,
+    register_remote,
+    remove_remote,
+    touch_remote,
+    update_queue_depth,
+)
+from shared.services.websocket_events import emit_dashboard_event
 from shared.utils.jid import jid_to_phone, normalize_jid, validate_jid
 
 logger = logging.getLogger(__name__)
+
+
+class DashboardConsumer(WebsocketConsumer):
+    def connect(self):
+        async_to_sync(self.channel_layer.group_add)("dashboard", self.channel_name)
+        self.accept()
+        logger.info("[WebSocket] dashboard connected")
+
+    def disconnect(self, code):
+        async_to_sync(self.channel_layer.group_discard)("dashboard", self.channel_name)
+        logger.info("[WebSocket] dashboard disconnected code=%s", code)
+
+    def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+        except (json.JSONDecodeError, TypeError):
+            return
+        if data.get("type") == "ping":
+            self.send(text_data=json.dumps({"type": "pong"}))
+
+    def dashboard_event(self, event):
+        self.send(text_data=json.dumps(event["event"]))
 
 
 class AgentConsumer(WebsocketConsumer):
@@ -28,7 +59,8 @@ class AgentConsumer(WebsocketConsumer):
 
         async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
         self.accept()
-        logger.info("Extension connected — profile %s", self.profile_id)
+        register_remote(self.profile_id, self.channel_name)
+        logger.info("[WS-Connect] profile_id=%s channel=%s", self.profile_id, self.channel_name)
 
         # Auto-create GoLoginProfile + WhatsAppSession on first connect
         try:
@@ -43,6 +75,31 @@ class AgentConsumer(WebsocketConsumer):
             )
             if p_created:
                 logger.info("Auto-created GoLoginProfile for %s", self.profile_id)
+            profile.extension_connected = True
+            profile.websocket_connected = True
+            profile.browser_running = True
+            profile.runtime_status = GoLoginProfile.RuntimeStatus.EXTENSION_CONNECTED
+            profile.health_status = GoLoginProfile.HealthStatus.DEGRADED
+            profile.last_heartbeat_at = timezone.now()
+            if profile.sync_status == GoLoginProfile.SyncStatus.MISSING_REMOTE:
+                profile.sync_status = GoLoginProfile.SyncStatus.SYNCED
+            profile.save(update_fields=[
+                "extension_connected", "websocket_connected", "browser_running",
+                "runtime_status", "health_status", "last_heartbeat_at", "sync_status",
+            ])
+            try:
+                from apps.profiles.runtime_registry import set_websocket_connected
+                set_websocket_connected(self.profile_id, True)
+            except Exception:
+                pass
+            emit_dashboard_event(
+                "profile.reconnected",
+                {
+                    "profile_id": self.profile_id,
+                    "runtime_status": profile.runtime_status,
+                    "health_status": profile.health_status,
+                },
+            )
 
             session, s_created = WhatsAppSession.objects.get_or_create(
                 profile=profile,
@@ -56,12 +113,33 @@ class AgentConsumer(WebsocketConsumer):
         except Exception as exc:
             logger.warning("Could not auto-create profile/session: %s", exc)
 
-        # Replay any pending tasks that were queued while the extension was offline
-        self._replay_pending_tasks()
+        logger.info("[WS-Connected] profile_id=%s", self.profile_id)
 
     def disconnect(self, code):
         async_to_sync(self.channel_layer.group_discard)(self.group_name, self.channel_name)
-        logger.info("Extension disconnected — profile %s", self.profile_id)
+        remove_remote(self.profile_id, self.channel_name)
+        logger.info("[WS-Disconnected] profile_id=%s code=%s", self.profile_id, code)
+        try:
+            from apps.profiles.runtime_registry import set_websocket_connected
+            set_websocket_connected(self.profile_id, False)
+        except Exception:
+            pass
+        try:
+            from apps.profiles.models import GoLoginProfile
+
+            remote = get_remote(self.profile_id)
+            if remote and remote.get("alive"):
+                return
+            GoLoginProfile.objects.filter(gologin_profile_id=self.profile_id).update(
+                extension_connected=False,
+                websocket_connected=False,
+                whatsapp_connected=False,
+                runtime_status=GoLoginProfile.RuntimeStatus.RECONNECTING,
+                health_status=GoLoginProfile.HealthStatus.UNHEALTHY,
+            )
+            emit_dashboard_event("profile.disconnected", {"profile_id": self.profile_id})
+        except Exception as exc:
+            logger.warning("[WebSocket] disconnect profile update failed profile=%s error=%s", self.profile_id, exc)
 
     # ── Messages FROM the extension ──────────────────────────────────────────
 
@@ -80,7 +158,9 @@ class AgentConsumer(WebsocketConsumer):
             logger.info("[WS-Receive] profile=%s type=%s", self.profile_id, t)
 
         if t == "register":
-            logger.info("Profile %s registered", self.profile_id)
+            register_remote(self.profile_id, self.channel_name, data)
+            self._on_profile_heartbeat(data)
+            logger.info("[WS-RegistryAdd] profile_id=%s websocket_id=%s", self.profile_id, data.get("websocket_id", ""))
         elif t == "ping":
             self.send(text_data=json.dumps({"type": "pong"}))
         elif t == "message_result":
@@ -89,6 +169,12 @@ class AgentConsumer(WebsocketConsumer):
             self._on_message_send_status(data)
         elif t == "message_sent_ack":
             self._on_message_sent_ack(data)
+        elif t == "message_failed_ack":
+            self._on_message_sent_ack(data)
+        elif t == "heartbeat":
+            self._on_profile_heartbeat(data)
+        elif t == "profile_heartbeat":
+            self._on_profile_heartbeat(data)
         elif t == "incoming_messages":
             self._on_incoming(data)
         elif t == "agent_debug":
@@ -100,6 +186,28 @@ class AgentConsumer(WebsocketConsumer):
             )
         elif t == "status_report":
             logger.info("Profile %s WA status: %s", self.profile_id, data.get("wa_status"))
+
+    def _on_profile_heartbeat(self, data):
+        from apps.profiles.services import mark_profile_heartbeat
+
+        touch_remote(self.profile_id, self.channel_name, data)
+        result = mark_profile_heartbeat(
+            self.profile_id,
+            whatsapp_ready=bool(data.get("whatsapp_ready")),
+            active_chat=data.get("active_chat", ""),
+            payload=data,
+        )
+        logger.info(
+            "[WS-Heartbeat] received profile=%s whatsapp_ready=%s result=%s",
+            self.profile_id,
+            bool(data.get("whatsapp_ready")),
+            result,
+        )
+        if data.get("whatsapp_ready"):
+            from django.core.cache import cache
+
+            if cache.add(f"replay_scan_lock:{self.profile_id}", "1", timeout=20):
+                self._replay_pending_tasks()
 
     def _on_message_result(self, data):
         from apps.campaigns.services.status import handle_message_result
@@ -130,7 +238,7 @@ class AgentConsumer(WebsocketConsumer):
         }
         result = mark_message_stage(log_id, status_map.get(stage, stage), data.get("error", ""))
         logger.info(
-            "Extension status received - profile=%s log=%s jid=%s stage=%s result=%s",
+            "[Extension-Receive] profile=%s log=%s jid=%s stage=%s result=%s",
             self.profile_id,
             log_id,
             data.get("jid", ""),
@@ -144,7 +252,7 @@ class AgentConsumer(WebsocketConsumer):
         data["profile_id"] = data.get("profile_id") or self.profile_id
         result = handle_message_ack(data)
         logger.info(
-            "ACK handled - profile=%s log=%s jid=%s status=%s result=%s",
+            "[WS-ACK] profile=%s log=%s jid=%s status=%s result=%s",
             self.profile_id,
             data.get("message_id") or data.get("task_id"),
             data.get("jid", ""),
@@ -179,40 +287,75 @@ class AgentConsumer(WebsocketConsumer):
             session = WhatsAppSession.objects.select_related("profile").get(
                 profile__gologin_profile_id=self.profile_id
             )
+            logger.info(
+                "[ProfileValidated] profile=%s session=%s channel=%s",
+                self.profile_id,
+                session.id,
+                self.channel_name,
+            )
         except WhatsAppSession.DoesNotExist:
-            logger.warning("No WhatsAppSession for profile %s", self.profile_id)
+            logger.warning(
+                "[ProfileValidated] failed reason=websocket_missing profile=%s channel=%s",
+                self.profile_id,
+                self.channel_name,
+            )
             return
 
         for msg in messages:
             jid = msg.get("jid", "")
-            if should_ignore_incoming_event(msg.get("sender_name", ""), msg.get("preview", "")):
+            sender = msg.get("sender_name", "")
+            if should_ignore_incoming_event(sender, msg.get("preview", "")):
                 logger.debug(
-                    "Incoming ignored - profile=%s jid=%s sender=%s preview=%s",
+                    "[ProfileValidated] skipped reason=ignored profile=%s jid=%s sender=%s",
                     self.profile_id,
                     jid or "?",
-                    msg.get("sender_name", ""),
-                    (msg.get("preview") or "")[:40],
+                    sender,
+                )
+                continue
+            # Cross-profile guard: the session's profile must match this WebSocket's profile_id.
+            # This prevents a message extracted by profile A from being dispatched via profile B.
+            session_profile_id = session.profile.gologin_profile_id
+            if session_profile_id != self.profile_id:
+                logger.error(
+                    "[ProfileValidated] failed reason=profile_mismatch "
+                    "ws_profile=%s session_profile=%s jid=%s sender=%s — dropping",
+                    self.profile_id,
+                    session_profile_id,
+                    jid or "?",
+                    sender,
                 )
                 continue
             try:
                 result = enqueue_incoming_message(session.id, msg)
                 logger.info(
-                    "Incoming queued - profile=%s jid=%s sender=%s result=%s",
+                    "[ProfileValidated] queued profile=%s jid=%s sender=%s result=%s",
                     self.profile_id,
                     jid or "?",
-                    msg.get("sender_name", ""),
+                    sender,
                     result,
                 )
             except Exception as exc:
-                logger.warning("Auto-reply queue error: %s", exc)
+                logger.warning(
+                    "[ProfileValidated] queue_error profile=%s jid=%s sender=%s error=%s",
+                    self.profile_id, jid or "?", sender, exc,
+                )
 
     # ── Messages TO the extension ────────────────────────────────────────────
 
     def push_task(self, event):
         """Called by channel-layer group_send from signals/tasks."""
         task = event["task"]
+        remote = get_remote(self.profile_id)
+        if not remote or not remote.get("alive"):
+            logger.warning(
+                "[WS-SendTask] blocked profile=%s log=%s reason=%s",
+                self.profile_id,
+                task.get("message_id") or task.get("task_id"),
+                (remote or {}).get("stale_reason") or "registry_missing",
+            )
+            return
         logger.info(
-            "WebSocket dispatch - profile=%s log=%s jid=%s conversation=%s",
+            "[WS-SendTask] profile=%s log=%s jid=%s conversation=%s",
             self.profile_id,
             task.get("message_id") or task.get("task_id"),
             task.get("jid", ""),
@@ -251,22 +394,29 @@ class AgentConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps(task))
 
     def _replay_pending_tasks(self):
-        """Push any PENDING MessageLogs to the extension after reconnect."""
+        """Push stale PENDING/RETRYING MessageLogs to the extension after reconnect.
+
+        Intentionally excludes DISPATCHED, EXTENSION_RECEIVED, OPENING_CHAT, SENDING,
+        and ACK_RECEIVED — those are actively in-flight and handled exclusively by
+        check_message_ack_timeout_task.  Replaying them here causes duplicate sends
+        when the extension is mid-execution on the original task.
+
+        Only replays messages older than 5 minutes to give the extension time to
+        complete and ACK the current send before we consider a task truly stuck.
+        """
         try:
             from apps.messaging.models import MessageLog
             from django.core.cache import cache
+            from datetime import timedelta
+
+            stale_cutoff = timezone.now() - timedelta(minutes=5)
             pending = MessageLog.objects.filter(
                 profile__gologin_profile_id=self.profile_id,
                 status__in=[
                     MessageLog.Status.PENDING,
-                    MessageLog.Status.SCHEDULED,
-                    MessageLog.Status.DISPATCHED,
-                    MessageLog.Status.EXTENSION_RECEIVED,
-                    MessageLog.Status.OPENING_CHAT,
-                    MessageLog.Status.SENDING,
-                    MessageLog.Status.ACK_RECEIVED,
                     MessageLog.Status.RETRYING,
                 ],
+                created_at__lt=stale_cutoff,
             ).order_by("id")[:50]
 
             count = 0
@@ -321,7 +471,8 @@ class AgentConsumer(WebsocketConsumer):
                 count += 1
 
             if count:
-                logger.info("[Dispatch] Replayed %d unresolved JID tasks for profile %s", count, self.profile_id)
+                logger.info("[Reconnect] replayed=%d profile=%s", count, self.profile_id)
+            update_queue_depth(self.profile_id, queue_depth=max(len(pending) - count, 0), active_tasks=count)
         except Exception as exc:
             logger.warning("Could not replay pending tasks: %s", exc)
 
@@ -329,9 +480,13 @@ class AgentConsumer(WebsocketConsumer):
 # ── Public helper used by signals & tasks ────────────────────────────────────
 
 def push_task_to_profile(profile_id: str, phone: str, message: str,
-                         log_id, jid: str = "", conversation_id=None) -> None:
+                         log_id, jid: str = "", conversation_id=None) -> bool | None:
     """
     Push a JID-routed send-message task to the connected Chrome extension.
+
+    Returns False when blocked because the profile is not ready (caller should
+    stop dispatching further messages for this profile and defer).
+    Returns None in all other cases (dispatched, duplicate-prevented, or error).
 
     Phone is only used to derive a c.us JID when the caller has not supplied one.
     Name-based routing is intentionally unsupported here.
@@ -348,6 +503,50 @@ def push_task_to_profile(profile_id: str, phone: str, message: str,
         logger.warning("Rejecting push without valid jid - profile=%s phone=%s log=%s", profile_id, phone, log_id)
         return
 
+    try:
+        from apps.campaigns.services.status import mark_message_stage
+        from apps.profiles.services import profile_ready_for_dispatch
+        from apps.profiles.tasks import ensure_profile_runtime_task
+        from apps.campaigns.tasks import check_message_ack_timeout_task
+
+        ready, reason = profile_ready_for_dispatch(profile_id)
+        if not ready:
+            mark_message_stage(log_id, "retrying", f"profile_not_ready:{reason}")
+            # Rate-limit to ONE relaunch attempt per profile per 10 minutes.
+            # Without this guard, every blocked message (potentially 100+) queues
+            # its own ensure_profile_runtime_task, causing repeated GoLogin browser
+            # relaunches every ~180 s (session_lock TTL) and an endless reconnect loop.
+            from django.core.cache import cache as _rt_cache
+            _ensure_key = f"ensure_runtime_scheduled:{profile_id}"
+            if not _rt_cache.get(_ensure_key):
+                _rt_cache.set(_ensure_key, "1", timeout=180)  # 3-min rate limit (was 10 min)
+                ensure_profile_runtime_task.apply_async(args=[profile_id, f"dispatch:{reason}"], countdown=3)
+            # Use a long countdown so the profile has time to reconnect before the
+            # ACK-timeout task fires. 30 s burned through the 5-attempt budget in
+            # 2.5 min; 120 s gives ~10 min for WhatsApp to come back online.
+            check_message_ack_timeout_task.apply_async(args=[int(log_id)], countdown=120)
+            logger.warning(
+                "[Dispatch] blocked profile_id=%s jid=%s message_id=%s conversation_id=%s reason=%s",
+                profile_id,
+                jid,
+                log_id,
+                conversation_id or "",
+                reason,
+            )
+            emit_dashboard_event(
+                "campaign.status.updated",
+                {
+                    "profile_id": profile_id,
+                    "message_id": log_id,
+                    "jid": jid,
+                    "status": "retrying",
+                    "reason": reason,
+                },
+            )
+            return False  # signal to caller that dispatch was blocked
+    except Exception as exc:
+        logger.warning("[CampaignDispatch] readiness check failed profile_id=%s log=%s jid=%s error=%s", profile_id, log_id, jid, exc)
+
     task = {
         "type": "send_message_by_jid",
         "task_id": log_id,
@@ -358,6 +557,21 @@ def push_task_to_profile(profile_id: str, phone: str, message: str,
         "conversation_id": conversation_id,
     }
 
+    # Dedup guard FIRST — must be acquired before mark_message_stage to prevent a
+    # concurrent caller (e.g. _replay_pending_tasks racing with _fire_reply) from
+    # marking the log DISPATCHED and then silently dropping the group_send.
+    # TTL is 150 s — longer than the 90 s ACK-timeout countdown — so the guard is
+    # still active when check_message_ack_timeout_task fires its first retry.
+    from django.core.cache import cache as _cache
+
+    dispatch_lock_key = f"send_dispatch_lock:{log_id}"
+    if not _cache.add(dispatch_lock_key, "1", timeout=150):
+        logger.info(
+            "[DuplicatePrevented] profile=%s jid=%s log=%s — dispatch already in flight, skipping",
+            profile_id, jid, log_id,
+        )
+        return
+
     try:
         from apps.campaigns.services.status import mark_message_stage
 
@@ -366,19 +580,26 @@ def push_task_to_profile(profile_id: str, phone: str, message: str,
         logger.warning("Could not mark dispatch - profile=%s log=%s jid=%s error=%s", profile_id, log_id, jid, exc)
 
     logger.info(
-        "Task emitted - profile=%s jid=%s phone=%s log=%s conversation=%s",
+        "[ProfileLockAcquired] profile=%s jid=%s log=%s — dispatch cleared, sending to extension",
+        profile_id, jid, log_id,
+    )
+    logger.info(
+        "[Dispatch] task_emitted profile=%s jid=%s phone=%s log=%s conversation=%s channel=%s",
         profile_id,
         jid,
         jid_to_phone(jid) or "?",
         log_id,
         conversation_id or "",
+        f"profile_{profile_id}",
     )
+
     try:
         async_to_sync(channel_layer.group_send)(
             f"profile_{profile_id}",
             {"type": "push_task", "task": task},
         )
     except Exception as exc:
+        _cache.delete(dispatch_lock_key)
         logger.exception(
             "WebSocket group emit failed - profile=%s log=%s jid=%s error=%s",
             profile_id,

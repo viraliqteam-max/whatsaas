@@ -299,8 +299,9 @@ textarea{resize:vertical;min-height:72px}
 
           <div id="fp-bulk" class="form-panel">
             <div class="fg">
-              <label>JSON Array of contacts</label>
-              <textarea id="bulk-json" placeholder='[{"name":"John Doe","phone_number":"919876543210"},{"name":"Jane","phone_number":"12025550123"}]' style="min-height:100px"></textarea>
+              <label>Phone numbers — one per line (any format)</label>
+              <textarea id="bulk-json" placeholder="9820251152&#10;+917993153555&#10;919920048811&#10;07987654321&#10;&#10;Also accepts JSON: [{&quot;name&quot;:&quot;John&quot;,&quot;phone_number&quot;:&quot;919876543210&quot;}]" style="min-height:130px"></textarea>
+              <small style="color:#888;font-size:11px">Supports: 10-digit, +91, 91, or 0-prefixed Indian numbers. Name defaults to phone number if omitted.</small>
             </div>
             <div class="form-footer">
               <button class="btn btn-primary" onclick="bulkImport()">Import Contacts</button>
@@ -381,31 +382,62 @@ textarea{resize:vertical;min-height:72px}
             </div>
           </div>
           <div id="fp-campaign" class="form-panel">
-            <div class="fr">
-              <div class="fg"><label>Campaign Name *</label><input id="cp-name" type="text" placeholder="April Outreach"></div>
-              <div class="fg"><label>GoLogin Profile *</label><select id="cp-profile"><option value="">— Select —</option></select></div>
+
+            <!-- AI Auto-select status banner -->
+            <div id="cp-profile-banner" class="realtime-bar" style="margin-bottom:14px">
+              <span class="ws-dot" id="cp-profile-dot" style="background:#ccc"></span>
+              <span id="cp-profile-label" style="font-size:13px;color:#666">Loading best profile…</span>
+              <span class="ai-badge" style="margin-left:auto">AUTO-SELECTED</span>
             </div>
-            <div class="fg"><label>Template (optional — OR write custom message below)</label><select id="cp-template"><option value="">— No template, use custom message —</option></select></div>
-            <div class="fg"><label>Custom Message (if no template)</label><textarea id="cp-custom" placeholder="Hi {name}, this is a personal message for you!"></textarea></div>
+
+            <!-- Intent + optional hint -->
             <div class="fr">
-              <div class="fg"><label>Min Delay (seconds)</label><input id="cp-min" type="number" value="180" min="5"></div>
-              <div class="fg"><label>Max Delay (seconds)</label><input id="cp-max" type="number" value="240" min="5"></div>
-            </div>
-            <div class="fr">
-              <div class="fg"><label>Timezone</label><input id="cp-tz" type="text" value="Asia/Kolkata"></div>
-              <div class="fg" style="display:flex;align-items:flex-end">
-                <div class="fc" style="margin-bottom:0"><input type="checkbox" id="cp-windows" checked><label for="cp-windows">Enforce time windows (8-11am, 1-4pm, 7-10pm)</label></div>
+              <div class="fg">
+                <label>Message Intent <span style="color:#888;font-weight:400">(guides AI tone)</span></label>
+                <select id="cp-intent">
+                  <option value="outreach">Outreach — Introduce &amp; invite curiosity</option>
+                  <option value="sales">Sales — Highlight benefit + soft CTA</option>
+                  <option value="followup">Follow-up — Reference earlier contact</option>
+                  <option value="reengagement">Re-engagement — Win back cold leads</option>
+                  <option value="onboarding">Onboarding — Welcome new contacts</option>
+                  <option value="reminder">Reminder — Gentle nudge</option>
+                  <option value="warmup">Warm-up — Build rapport, no pitch</option>
+                  <option value="support">Support — Ask if they need help</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>AI Hint <span style="color:#888;font-weight:400">(optional — seed the message)</span></label>
+                <input id="cp-hint" type="text" placeholder="e.g. Mention our free trial ending Friday">
               </div>
             </div>
+
+            <!-- Target selection (the ONLY required fields) -->
             <div class="fr">
-              <div class="fg"><label>Target Contacts (Ctrl+click for multiple)</label><select id="cp-contacts" multiple style="min-height:90px"></select></div>
-              <div class="fg"><label>Target Groups (Ctrl+click for multiple)</label><select id="cp-groups" multiple style="min-height:90px"></select></div>
+              <div class="fg">
+                <label>Target Contacts <span style="color:#c0392b;font-weight:700">*</span> <span style="color:#888;font-weight:400">(Ctrl+click for multiple)</span></label>
+                <select id="cp-contacts" multiple style="min-height:100px"></select>
+              </div>
+              <div class="fg">
+                <label>Target Groups <span style="color:#888;font-weight:400">(Ctrl+click for multiple)</span></label>
+                <select id="cp-groups" multiple style="min-height:100px"></select>
+              </div>
             </div>
+
             <div class="fc">
-              <input type="checkbox" id="cp-auto"><label for="cp-auto">🤖 Auto-Send — message every new contact added by me immediately (real-time, no click needed)</label>
+              <input type="checkbox" id="cp-auto"><label for="cp-auto">Auto-Send — message every new contact I add immediately (real-time, zero clicks)</label>
             </div>
-            <div class="form-footer">
-              <button class="btn btn-primary" onclick="createCampaign()">Create Campaign</button>
+
+            <!-- AI mode info strip -->
+            <div style="background:#f0fff5;border:1px solid #b0e0c0;border-radius:6px;padding:10px 14px;font-size:12px;color:#0a7a4a;margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span class="ai-badge">AI</span>
+              <span>Profile auto-selected by runtime health.</span>
+              <span>Unique personalized message generated per contact.</span>
+              <span>Delays auto-optimized (90–240s, human-paced).</span>
+              <span>Time windows enforced automatically.</span>
+            </div>
+
+            <div class="form-footer" style="margin-top:12px">
+              <button class="btn btn-primary" onclick="createCampaign()">Launch Campaign</button>
               <button class="btn btn-secondary" onclick="tog('fp-campaign')">Cancel</button>
             </div>
           </div>
@@ -749,6 +781,8 @@ let _token   = localStorage.getItem('wa_token')   || '';
 let _refresh = localStorage.getItem('wa_refresh') || '';
 let _qrSessionId = null;
 let _inboxTimer  = null;
+let _dashboardWs = null;
+let _dashboardWsRetry = null;
 
 // ═══════════════════════════════════════════════════════
 // CORE API
@@ -844,6 +878,7 @@ function doLogout() {
   localStorage.removeItem('wa_token');
   localStorage.removeItem('wa_refresh');
   if (_inboxTimer) clearInterval(_inboxTimer);
+  if (_dashboardWs) _dashboardWs.close();
   $('app').style.display = 'none';
   $('login-screen').style.display = 'flex';
 }
@@ -853,8 +888,46 @@ function mountApp(username) {
   $('app').style.display = 'flex';
   $('nav-user').textContent = username || 'User';
   showPage('profiles');
+  connectDashboardWs();
   _inboxTimer = setInterval(refreshInboxBadge, 60000);
   refreshInboxBadge();
+}
+
+function connectDashboardWs() {
+  if (_dashboardWs && (_dashboardWs.readyState === WebSocket.OPEN || _dashboardWs.readyState === WebSocket.CONNECTING)) return;
+  clearTimeout(_dashboardWsRetry);
+  const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${scheme}://${location.host}/ws/dashboard/`);
+  _dashboardWs = ws;
+  ws.onopen = () => console.log('[DashboardWS] connected');
+  ws.onmessage = ev => {
+    let event;
+    try { event = JSON.parse(ev.data); } catch(e) { console.error('[DashboardWS] invalid payload', ev.data); return; }
+    handleDashboardEvent(event);
+  };
+  ws.onclose = () => {
+    console.warn('[DashboardWS] disconnected');
+    _dashboardWsRetry = setTimeout(connectDashboardWs, 3000);
+  };
+  ws.onerror = e => console.error('[DashboardWS] error', e);
+}
+
+function handleDashboardEvent(event) {
+  if (!event || !event.type) {
+    console.error('[DashboardWS] invalid event', event);
+    return;
+  }
+  console.log('[DashboardWS] event', event);
+  const type = event.type;
+  if (type.startsWith('profile.')) loadProfiles();
+  if (type.startsWith('campaign.')) loadCampaigns();
+  if (type.startsWith('conversation.message') || type === 'conversation.delivery.updated') {
+    refreshInboxBadge();
+    loadAllLogs();
+  }
+  if (type.endsWith('.failed') || type === 'profile.disconnected') {
+    toast(`${type}: ${(event.payload && (event.payload.reason || event.payload.error || event.payload.profile_id)) || ''}`, 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1109,14 +1182,50 @@ async function deleteContact(id) {
   catch(e){toast(e.message,'error');}
 }
 
+function _normalizeIndianPhone(raw) {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10 && /^[6-9]/.test(digits)) return '91' + digits;
+  if (digits.length === 11 && digits.startsWith('0')) return '91' + digits.slice(1);
+  if (digits.length === 12 && digits.startsWith('91')) return digits;
+  if (digits.length >= 7) return digits;
+  return '';
+}
+
 async function bulkImport() {
+  const raw = $('bulk-json').value.trim();
+  if (!raw) { toast('Nothing to import', 'error'); return; }
+
   let contacts;
-  try { contacts=JSON.parse($('bulk-json').value); } catch{toast('Invalid JSON','error');return;}
+
+  // Auto-detect JSON input
+  if (raw.startsWith('[') || raw.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(raw);
+      contacts = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      toast('Invalid JSON — fix the format or use one number per line', 'error');
+      return;
+    }
+  } else {
+    // Plain text: one phone number per line (comma/semicolon also accepted)
+    contacts = raw
+      .split(/[\n,;]+/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(s => {
+        const phone = _normalizeIndianPhone(s);
+        return phone ? { name: phone, phone_number: phone } : null;
+      })
+      .filter(Boolean);
+
+    if (!contacts.length) { toast('No valid phone numbers found', 'error'); return; }
+  }
+
   try {
-    const d=await apij('POST','/api/contacts/bulk_import/',{contacts});
+    const d = await apij('POST', '/api/contacts/bulk_import/', { contacts });
     toast(`Imported: ${d.created.length} | Skipped: ${d.skipped.length}`);
-    $('bulk-json').value=''; tog('fp-bulk'); loadContacts();
-  } catch(e){toast(e.message,'error');}
+    $('bulk-json').value = ''; tog('fp-bulk'); loadContacts();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1229,12 +1338,32 @@ async function runPreview() {
 // ═══════════════════════════════════════════════════════
 // CAMPAIGNS
 // ═══════════════════════════════════════════════════════
-function openCampaignForm() {
-  fillProfileSelects();
-  loadTemplates();
+async function openCampaignForm() {
   loadGroups();
   fillContactSelects();
   tog('fp-campaign');
+  // Fetch and display the auto-selected profile
+  const dot = $('cp-profile-dot');
+  const lbl = $('cp-profile-label');
+  dot.style.background = '#ffa502';
+  lbl.textContent = 'Finding best available profile…';
+  try {
+    const d = await apij('GET', '/api/messaging/campaigns/suggested_profile/');
+    if (d.profile) {
+      const rt = d.profile.runtime_status || 'unknown';
+      const isActive = d.profile.whatsapp_connected;
+      dot.style.background = isActive ? '#25d366' : '#ffa502';
+      lbl.innerHTML = `<strong>${esc(d.profile.name)}</strong> <span style="color:#888;font-size:11px">${rt}</span>`;
+      $('cp-profile-banner').className = 'realtime-bar' + (isActive ? '' : ' warn');
+    } else {
+      dot.style.background = '#ff4757';
+      lbl.textContent = 'No active profile found — launch a profile first';
+      $('cp-profile-banner').className = 'realtime-bar warn';
+    }
+  } catch(e) {
+    dot.style.background = '#ccc';
+    lbl.textContent = 'Could not detect profile';
+  }
 }
 
 async function loadCampaigns() {
@@ -1268,9 +1397,10 @@ async function loadCampaigns() {
           <span>⏳ Active: <strong style="color:#b86e00">${c.pending_count||0}</strong></span>
           <span>📊 Total: <strong>${c.total_messages||c.target_count||0}</strong></span>
           <span>👥 Targets: <strong>${c.target_count||0}</strong></span>
-          <span>🕐 ${c.min_delay_seconds}–${c.max_delay_seconds}s</span>
-          <span>🌏 ${c.campaign_timezone}</span>
-          ${c.auto_send?`<span class="auto-pill">🤖 Auto-Send ON</span>`:''}
+          ${c.profile_name?`<span>📱 ${esc(c.profile_name)}</span>`:'<span style="color:#aaa">📱 auto-select</span>'}
+          ${c.campaign_intent?`<span style="text-transform:capitalize">🎯 ${c.campaign_intent}</span>`:''}
+          ${c.ai_mode!==false?`<span class="ai-badge">AI</span>`:''}
+          ${c.auto_send?`<span class="auto-pill">Auto-Send</span>`:''}
           ${c.started_at?`<span>▶ ${fmtDate(c.started_at)}</span>`:''}
         </div>
       </div>`}).join('');
@@ -1278,25 +1408,34 @@ async function loadCampaigns() {
 }
 
 async function createCampaign() {
-  const name=v('cp-name'),profile=v('cp-profile'),tpl=v('cp-template'),custom=$('cp-custom').value.trim();
-  const minD=parseInt(v('cp-min')),maxD=parseInt(v('cp-max')),tz=v('cp-tz');
-  const windows=$('cp-windows').checked;
-  const contacts=Array.from($('cp-contacts').selectedOptions).map(o=>parseInt(o.value));
-  const groups=Array.from($('cp-groups').selectedOptions).map(o=>parseInt(o.value));
+  const contacts = Array.from($('cp-contacts').selectedOptions).map(o => parseInt(o.value));
+  const groups = Array.from($('cp-groups').selectedOptions).map(o => parseInt(o.value));
 
-  if(!name){toast('Campaign name required','error');return;}
-  if(!profile){toast('Select a profile','error');return;}
-  if(!tpl&&!custom){toast('Provide a template or custom message','error');return;}
-  if(!contacts.length&&!groups.length){toast('Select at least one contact or group','error');return;}
+  if (!contacts.length && !groups.length) {
+    toast('Select at least one contact or group', 'error');
+    return;
+  }
 
-  const autoSend=$('cp-auto').checked;
-  const body={name,profile:parseInt(profile),custom_message:custom,min_delay_seconds:minD,max_delay_seconds:maxD,campaign_timezone:tz,respect_time_windows:windows,auto_send:autoSend,target_contacts:contacts,target_groups:groups};
-  if(tpl)body.template=parseInt(tpl);
+  const intent = v('cp-intent') || 'outreach';
+  const hint = ($('cp-hint') ? $('cp-hint').value.trim() : '');
+  const autoSend = $('cp-auto').checked;
+
+  const body = {
+    campaign_intent: intent,
+    ai_mode: true,
+    custom_message: hint,
+    respect_time_windows: true,
+    auto_send: autoSend,
+    target_contacts: contacts,
+    target_groups: groups,
+  };
 
   try {
-    await apij('POST','/api/messaging/campaigns/',body);
-    toast('Campaign created!'); tog('fp-campaign'); loadCampaigns();
-  } catch(e){toast(e.message,'error');}
+    await apij('POST', '/api/messaging/campaigns/', body);
+    toast('Campaign created — AI will handle the rest!', 'success');
+    tog('fp-campaign');
+    loadCampaigns();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 async function runRealtime(id) {

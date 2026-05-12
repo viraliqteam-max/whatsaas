@@ -1,4 +1,5 @@
 import time
+import logging
 
 from django.utils import timezone
 
@@ -13,6 +14,8 @@ from apps.autoreply.services.memory_builder import build_memory
 from apps.autoreply.services.rag import get_rag_context
 from apps.autoreply.services.state_machine import get_or_create_state, transition
 from shared.services.websocket_events import emit_dashboard_event
+
+logger = logging.getLogger(__name__)
 
 
 class ConversationManager:
@@ -34,11 +37,28 @@ class ConversationManager:
         try:
             skip = anti_loop.should_skip(conversation, state, incoming_text, external_message_id)
             if skip.should_skip:
+                if skip.reason in ("human_active", "ai_paused"):
+                    logger.info("[HumanIntervention] conversation_id=%s reason=%s profile=%s",
+                                conversation.id, skip.reason,
+                                getattr(conversation.profile, "gologin_profile_id", ""))
+                elif skip.reason in ("echoed_ai_reply", "ai_message_loop", "repeated_reply"):
+                    logger.info("[DuplicateReplyBlocked] conversation_id=%s reason=%s",
+                                conversation.id, skip.reason)
+                else:
+                    logger.info("[ReplyCancelled] conversation_id=%s reason=%s", conversation.id, skip.reason)
                 self._log_skip(conversation, None, skip.reason, started)
                 return {"status": "skipped", "reason": skip.reason}
 
             intent_result = detect_intent(incoming_text)
             language = detect_language(incoming_text, previous=state.detected_language)
+            logger.info(
+                "[Intent] profile_id=%s conversation_id=%s intent=%s confidence=%s language=%s",
+                getattr(conversation.profile, "gologin_profile_id", ""),
+                conversation.id,
+                intent_result.intent,
+                intent_result.confidence,
+                language,
+            )
             user_message = ConversationMessage.objects.create(
                 conversation=conversation,
                 sender=ConversationMessage.Sender.USER,
@@ -51,6 +71,19 @@ class ConversationManager:
                     "intent_confidence": intent_result.confidence,
                     "intent_evidence": intent_result.evidence,
                 },
+            )
+            emit_dashboard_event(
+                "conversation.message.received",
+                {
+                    "profile_id": getattr(conversation.profile, "gologin_profile_id", ""),
+                    "conversation_id": conversation.id,
+                    "message_id": user_message.id,
+                    "jid": conversation.whatsapp_jid,
+                    "text": incoming_text,
+                    "intent": intent_result.intent,
+                    "language": language,
+                },
+                conversation_id=conversation.id,
             )
 
             lead, _ = LeadProfile.objects.get_or_create(conversation=conversation)
@@ -72,7 +105,24 @@ class ConversationManager:
 
             state = transition(state, lead, intent_result.intent)
             memory = build_memory(conversation, lead)
+            state.metadata = {
+                **(state.metadata or {}),
+                "last_detected_intent": intent_result.intent,
+                "last_intent_confidence": intent_result.confidence,
+                "missing_lead_fields": memory.lead_snapshot.get("missing_fields", []),
+                "last_memory_message_count": len(memory.messages),
+            }
+            state.save(update_fields=["metadata", "updated_at"])
+            logger.info(
+                "[Memory] profile_id=%s conversation_id=%s messages=%s lead_score=%s missing=%s",
+                getattr(conversation.profile, "gologin_profile_id", ""),
+                conversation.id,
+                len(memory.messages),
+                lead.qualification_score,
+                memory.lead_snapshot.get("missing_fields", []),
+            )
             rag_context = get_rag_context(conversation, incoming_text, lead)
+            business_context = getattr(conversation.profile, "business_context", "") or ""
             reply = generate_reply(
                 user_text=incoming_text,
                 memory=memory,
@@ -81,8 +131,22 @@ class ConversationManager:
                 intent=intent_result.intent,
                 language=language,
                 rag_context=rag_context,
+                business_context=business_context,
+            )
+            logger.info(
+                "[HeuristicReply] profile_id=%s conversation_id=%s intent=%s language=%s stage=%s reply_len=%d",
+                getattr(conversation.profile, "gologin_profile_id", ""),
+                conversation.id,
+                intent_result.intent,
+                language,
+                state.stage,
+                len(reply),
             )
             if anti_loop.is_repeated_reply(conversation, reply):
+                logger.info("[DuplicateReplyBlocked] conversation_id=%s reason=repeated_reply profile=%s jid=%s",
+                            conversation.id,
+                            getattr(conversation.profile, "gologin_profile_id", ""),
+                            conversation.whatsapp_jid)
                 self._log_skip(conversation, user_message, "repeated_reply", started)
                 return {"status": "skipped", "reason": "repeated_reply"}
 
@@ -104,10 +168,26 @@ class ConversationManager:
                 latency_ms=self._elapsed_ms(started),
             )
             emit_dashboard_event(
-                "conversation.message.ai_queued",
+                "conversation.message.ai_generated",
                 {
+                    "profile_id": getattr(conversation.profile, "gologin_profile_id", ""),
                     "conversation_id": conversation.id,
                     "message_id": ai_message.id,
+                    "jid": conversation.whatsapp_jid,
+                    "text": reply,
+                    "intent": intent_result.intent,
+                    "language": language,
+                    "stage": state.stage,
+                },
+                conversation_id=conversation.id,
+            )
+            emit_dashboard_event(
+                "conversation.message.ai_queued",
+                {
+                    "profile_id": getattr(conversation.profile, "gologin_profile_id", ""),
+                    "conversation_id": conversation.id,
+                    "message_id": ai_message.id,
+                    "jid": conversation.whatsapp_jid,
                     "stage": state.stage,
                     "lead_score": lead.qualification_score,
                 },

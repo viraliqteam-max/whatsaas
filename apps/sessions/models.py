@@ -20,6 +20,18 @@ class WhatsAppSession(models.Model):
                                     help_text="WhatsApp number associated with this session")
     qr_code_base64 = models.TextField(blank=True,
                                       help_text="Base64-encoded QR code PNG (temporary, for login)")
+    whatsapp_phone_number = models.CharField(
+        max_length=20, blank=True,
+        help_text="Phone number of the logged-in WhatsApp account (digits only)"
+    )
+    logged_in_jid = models.CharField(
+        max_length=100, blank=True,
+        help_text="JID of the logged-in account, e.g. 919812345678@c.us"
+    )
+    account_pushname = models.CharField(
+        max_length=100, blank=True,
+        help_text="WhatsApp account display name (pushname)"
+    )
     last_checked_at = models.DateTimeField(null=True, blank=True)
     logged_in_at = models.DateTimeField(null=True, blank=True)
     error_message = models.TextField(blank=True)
@@ -56,6 +68,22 @@ class Conversation(models.Model):
                              help_text="Digits extracted from JID — used for deep-link navigation")
     display_name = models.CharField(max_length=100, blank=True,
                                     help_text="Last known display name (informational only)")
+    pushname = models.CharField(
+        max_length=100, blank=True,
+        help_text="Sender's WhatsApp pushname — separate from saved contact name"
+    )
+    chat_type = models.CharField(
+        max_length=20, default='private', blank=True,
+        help_text="Chat type: private / group / business"
+    )
+    last_message_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Timestamp of the most recent incoming message in this conversation"
+    )
+    message_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Running count of incoming messages received for this conversation"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -95,6 +123,18 @@ class IncomingMessage(models.Model):
     )
     message_preview = models.TextField(
         help_text="Last message text visible in the chat sidebar"
+    )
+    message_id = models.CharField(
+        max_length=200, blank=True, default='', db_index=True,
+        help_text="WhatsApp message data-id attribute (stable internal identifier)"
+    )
+    extraction_method = models.CharField(
+        max_length=30, blank=True, default='',
+        help_text="How the JID was extracted: url / react_fiber / react_store / dom_data_id / active_poll"
+    )
+    extraction_metadata = models.JSONField(
+        default=dict, blank=True,
+        help_text="Full extraction metadata payload from the Chrome extension"
     )
     unread_count = models.PositiveIntegerField(default=1)
     is_processed = models.BooleanField(
